@@ -20,6 +20,8 @@ import ListItem from '@mui/material/ListItem';
 import ListItemText from '@mui/material/ListItemText';
 import Divider from '@mui/material/Divider';
 import DeleteIcon from '@mui/icons-material/Delete';
+import AddIcon from '@mui/icons-material/Add';
+import RemoveIcon from '@mui/icons-material/Remove';
 
 function loadRazorpayScript(src) {
   return new Promise((resolve) => {
@@ -62,8 +64,24 @@ function App() {
     });
   };
 
+
   const handleRemoveFromCart = (id) => {
     setCart((prev) => prev.filter((item) => item.id !== id));
+  };
+
+  const handleIncreaseQty = (id) => {
+    setCart((prev) => prev.map((item) => item.id === id ? { ...item, qty: item.qty + 1 } : item));
+  };
+
+  const handleDecreaseQty = (id) => {
+    setCart((prev) => prev.map((item) => {
+      if (item.id === id) {
+        if (item.qty > 1) return { ...item, qty: item.qty - 1 };
+        // If qty is 1, remove item
+        return null;
+      }
+      return item;
+    }).filter(Boolean));
   };
 
   const handleBuy = async (art) => {
@@ -137,21 +155,52 @@ function App() {
         <Box sx={{ width: 350, p: 2 }} role="presentation">
           <Typography variant="h6" fontWeight={700} sx={{ mb: 2 }}>Your Cart</Typography>
           <Divider />
-          <List>
-            {cart.length === 0 && <ListItem><ListItemText primary="Cart is empty" /></ListItem>}
-            {cart.map((item) => (
-              <ListItem key={item.id} secondaryAction={
-                <IconButton edge="end" aria-label="delete" onClick={() => handleRemoveFromCart(item.id)}>
-                  <DeleteIcon />
-                </IconButton>
-              }>
-                <ListItemText
-                  primary={item.title}
-                  secondary={`Qty: ${item.qty} | ₹${((item.price * item.qty) / 100).toLocaleString('en-IN')}`}
-                />
-              </ListItem>
-            ))}
-          </List>
+            <List sx={{ flexGrow: 1 }}>
+              {cart.length === 0 && (
+                <ListItem>
+                  <ListItemText primary="Cart is empty" />
+                </ListItem>
+              )}
+              {cart.map((item) => (
+                <ListItem key={item.id} secondaryAction={
+                  <>
+                    <IconButton edge="end" aria-label="remove" onClick={() => handleDecreaseQty(item.id)} size="small">
+                      <RemoveIcon />
+                    </IconButton>
+                    <span style={{ margin: '0 8px', fontWeight: 600 }}>{item.qty}</span>
+                    <IconButton edge="end" aria-label="add" onClick={() => handleIncreaseQty(item.id)} size="small">
+                      <AddIcon />
+                    </IconButton>
+                    <IconButton edge="end" aria-label="delete" onClick={() => handleRemoveFromCart(item.id)} size="small">
+                      <DeleteIcon />
+                    </IconButton>
+                  </>
+                }>
+                  <ListItemText
+                    primary={item.title}
+                    secondary={`₹${((item.price * item.qty) / 100).toLocaleString('en-IN')}`}
+                  />
+                </ListItem>
+              ))}
+            </List>
+            {/* Cart total and checkout */}
+            <Box sx={{ p: 2, borderTop: '1px solid #eee', background: '#fafafa' }}>
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
+                <span style={{ fontWeight: 600 }}>Total:</span>
+                <span style={{ fontWeight: 700, fontSize: 18 }}>
+                  ₹{(cart.reduce((sum, item) => sum + item.price * item.qty, 0) / 100).toLocaleString('en-IN')}
+                </span>
+              </Box>
+              <Button
+                variant="contained"
+                color="primary"
+                fullWidth
+                disabled={cart.length === 0}
+                onClick={handleCheckout}
+              >
+                Checkout
+              </Button>
+            </Box>
         </Box>
       </Drawer>
       <Container maxWidth="md" sx={{ mt: 6 }}>
