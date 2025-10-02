@@ -10,8 +10,6 @@ import CardContent from '@mui/material/CardContent';
 import CardActions from '@mui/material/CardActions';
 import Button from '@mui/material/Button';
 import CircularProgress from '@mui/material/CircularProgress';
-import ShoppingCartIcon from '@mui/icons-material/ShoppingCart';
-import Badge from '@mui/material/Badge';
 import Drawer from '@mui/material/Drawer';
 import IconButton from '@mui/material/IconButton';
 import List from '@mui/material/List';
@@ -21,6 +19,12 @@ import Divider from '@mui/material/Divider';
 import DeleteIcon from '@mui/icons-material/Delete';
 import AddIcon from '@mui/icons-material/Add';
 import RemoveIcon from '@mui/icons-material/Remove';
+import CategoryIcon from '@mui/icons-material/Category';
+import SearchIcon from '@mui/icons-material/Search';
+import PersonOutlineIcon from '@mui/icons-material/PersonOutline';
+import ShoppingCartIcon from '@mui/icons-material/ShoppingCart';
+import Badge from '@mui/material/Badge';
+import InfiniteSlider from './components/InfiniteSlider';
 
 function loadRazorpayScript(src) {
   return new Promise((resolve) => {
@@ -33,64 +37,30 @@ function loadRazorpayScript(src) {
 }
 
 function App() {
-  // Handle checkout for all cart items
-  const handleCheckout = async () => {
-    if (cart.length === 0) return;
-    // Calculate total amount
-    const totalAmount = cart.reduce((sum, item) => sum + item.price * item.qty, 0);
-    // Load Razorpay script
-    const res = await loadRazorpayScript('https://checkout.razorpay.com/v1/checkout.js');
-    if (!res) {
-      alert('Failed to load Razorpay SDK.');
-      return;
-    }
-    // Create order on backend
-    let order;
-    try {
-      const orderRes = await fetch('http://localhost:5000/api/create-order', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ amount: totalAmount })
-      });
-      order = await orderRes.json();
-    } catch (err) {
-      alert('Failed to connect to backend.');
-      return;
-    }
-    if (!order.id) {
-      alert('Failed to create order. ' + (order.error || ''));
-      return;
-    }
-    const options = {
-      key: 'YOUR_RAZORPAY_KEY_ID', // Replace with your Razorpay key id
-      amount: order.amount,
-      currency: order.currency,
-      name: 'Enlight Art Gallery',
-      description: 'Purchase from Enlight Art Gallery',
-      order_id: order.id,
-      handler: function (response) {
-        alert('Payment successful! Payment ID: ' + response.razorpay_payment_id);
-        setCart([]);
-        setCartOpen(false);
-      },
-      prefill: {
-        name: '',
-        email: '',
-        contact: ''
-      },
-      theme: {
-        color: '#1976d2'
-      }
-    };
-    const rzp = new window.Razorpay(options);
-    rzp.open();
-  };
   const [artworks, setArtworks] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [payingId, setPayingId] = useState(null);
   const [cart, setCart] = useState([]);
   const [cartOpen, setCartOpen] = useState(false);
+
+  // Flashing/changing promo text
+  const promoMessages = [
+    'Get 10% off on your first purchase with code FLORIYNEW',
+    'Welcome to Enlight store',
+    'Handcrafted candles & art gifts',
+    'Free shipping on orders over ₹999',
+  ];
+  const [flashingText, setFlashingText] = useState(promoMessages[0]);
+  
+  useEffect(() => {
+    let idx = 0;
+    const interval = setInterval(() => {
+      idx = (idx + 1) % promoMessages.length;
+      setFlashingText(promoMessages[idx]);
+    }, 2000);
+    return () => clearInterval(interval);
+  }, []);
 
   useEffect(() => {
     fetch('http://localhost:5000/api/artworks')
@@ -115,7 +85,6 @@ function App() {
     });
   };
 
-
   const handleRemoveFromCart = (id) => {
     setCart((prev) => prev.filter((item) => item.id !== id));
   };
@@ -128,7 +97,6 @@ function App() {
     setCart((prev) => prev.map((item) => {
       if (item.id === id) {
         if (item.qty > 1) return { ...item, qty: item.qty - 1 };
-        // If qty is 1, remove item
         return null;
       }
       return item;
@@ -144,7 +112,6 @@ function App() {
       return;
     }
 
-    // Create order on backend
     let order;
     try {
       const orderRes = await fetch('http://localhost:5000/api/create-order', {
@@ -158,53 +125,96 @@ function App() {
       setPayingId(null);
       return;
     }
+
     if (!order.id) {
       alert('Failed to create order. ' + (order.error || ''));
       setPayingId(null);
       return;
     }
 
-  const options = {
-    key: 'YOUR_RAZORPAY_KEY_ID', // Replace with your Razorpay key id
-    amount: order.amount,
-    currency: order.currency,
-    name: 'Enlight Art Gallery',
-    description: art.title,
-    order_id: order.id,
-    handler: function (response) {
-      alert('Payment successful! Payment ID: ' + response.razorpay_payment_id);
-    },
-    prefill: {
-      name: '',
-      email: '',
-      contact: ''
-    },
-    theme: {
-      color: '#3399cc'
-    }
-  };
-  const rzp = new window.Razorpay(options);
-  rzp.open();
-  setPayingId(null);
-  } // <-- close handleBuy
+    const options = {
+      key: 'YOUR_RAZORPAY_KEY_ID',
+      amount: order.amount,
+      currency: order.currency,
+      name: 'Enlight Art Gallery',
+      description: art.title,
+      order_id: order.id,
+      handler: function (response) {
+        alert('Payment successful! Payment ID: ' + response.razorpay_payment_id);
+      },
+      prefill: {
+        name: '',
+        email: '',
+        contact: ''
+      },
+      theme: {
+        color: '#3399cc'
+      }
+    };
 
-  // ...rest of App component (JSX) should be here...
+    const rzp = new window.Razorpay(options);
+    rzp.open();
+    setPayingId(null);
+  };
+
+  const handleCheckout = async () => {
+    if (cart.length === 0) return;
+    
+    const totalAmount = cart.reduce((sum, item) => sum + item.price * item.qty, 0);
+    const res = await loadRazorpayScript('https://checkout.razorpay.com/v1/checkout.js');
+    
+    if (!res) {
+      alert('Failed to load Razorpay SDK.');
+      return;
+    }
+
+    let order;
+    try {
+      const orderRes = await fetch('http://localhost:5000/api/create-order', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ amount: totalAmount })
+      });
+      order = await orderRes.json();
+    } catch (err) {
+      alert('Failed to connect to backend.');
+      return;
+    }
+
+    if (!order.id) {
+      alert('Failed to create order. ' + (order.error || ''));
+      return;
+    }
+
+    const options = {
+      key: 'YOUR_RAZORPAY_KEY_ID',
+      amount: order.amount,
+      currency: order.currency,
+      name: 'Enlight Art Gallery',
+      description: 'Purchase from Enlight Art Gallery',
+      order_id: order.id,
+      handler: function (response) {
+        alert('Payment successful! Payment ID: ' + response.razorpay_payment_id);
+        setCart([]);
+        setCartOpen(false);
+      },
+      prefill: {
+        name: '',
+        email: '',
+        contact: ''
+      },
+      theme: {
+        color: '#1976d2'
+      }
+    };
+    
+    const rzp = new window.Razorpay(options);
+    rzp.open();
+  };
+
   return (
     <>
-      {/* AppBar and Cart Drawer */}
-      <AppBar position="fixed" color="default" elevation={1} sx={{ bgcolor: '#fff' }}>
-        <Toolbar>
-          <Typography variant="h5" fontWeight={700} sx={{ flexGrow: 1, color: '#222' }}>
-            Enlight Candle Art
-          </Typography>
-          <IconButton color="inherit" onClick={() => setCartOpen(true)}>
-            <Badge badgeContent={cart.reduce((sum, item) => sum + item.qty, 0)} color="primary">
-              <ShoppingCartIcon />
-            </Badge>
-          </IconButton>
-        </Toolbar>
-      </AppBar>
-      <Toolbar />
+      {/* Cart Drawer */}
       <Drawer anchor="right" open={cartOpen} onClose={() => setCartOpen(false)}>
         <Box sx={{ width: 350, p: 2 }} role="presentation">
           <Typography variant="h6" fontWeight={700} sx={{ mb: 2 }}>Your Cart</Typography>
@@ -258,89 +268,141 @@ function App() {
         </Box>
       </Drawer>
 
-      {/* Hero/Banner Section */}
-      <Box sx={{
-        width: '100%',
-        minHeight: { xs: 280, md: 400 },
-        background: 'linear-gradient(120deg, #fbeee6 0%, #f7d9e3 100%)',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        flexDirection: 'column',
-        pt: 6,
-        pb: 6,
-        mb: 4,
-        position: 'relative',
-        overflow: 'hidden',
-      }}>
-        <Typography variant="h2" align="center" fontWeight={800} sx={{ color: '#d16ba5', mb: 2, fontSize: { xs: 32, md: 48 } }}>
-          A Little Luxury, A Lot of Love
+      {/* Promo Bar and Search Section */}
+      <Box sx={{ width: '100%', bgcolor: '#111', color: '#fff', py: 2, px: { xs: 2, md: 4 }, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+        {/* Flashing Promo */}
+        <Typography sx={{ fontSize: 15, fontWeight: 500, minHeight: 24, transition: 'opacity 0.4s', opacity: 1, mb: 2 }}>
+          {flashingText}
         </Typography>
-        <Typography variant="h5" align="center" sx={{ color: '#222', mb: 3, fontWeight: 400 }}>
-          Discover Handcrafted Candle Art & Gifts
-        </Typography>
-        {/* Optional: Add a hero image or illustration here */}
-        <Box
-          component="img"
-          src="https://floriy.co/cdn/shop/files/F113FB90-7ACF-4A46-A274-555310AE4A89.jpg?v=1752172173&width=600"
-          alt="Hero Candle Art"
-          sx={{
-            width: { xs: '90%', md: 420 },
-            borderRadius: 6,
-            boxShadow: 4,
-            objectFit: 'cover',
-            maxHeight: 320,
-          }}
-        />
+        {/* Main Navigation Row */}
+        <Box sx={{ width: '100%', maxWidth: 1400, display: 'flex', alignItems: 'center', gap: { xs: 2, md: 4 } }}>
+          {/* Left: Site Name */}
+          <Typography sx={{ fontWeight: 700, fontSize: { xs: 18, md: 22 }, letterSpacing: 1, color: '#fff', flex: '0 0 auto', whiteSpace: 'nowrap' }}>
+            Enlight Candle Art
+          </Typography>
+          {/* Center: Search */}
+          <Box sx={{ flex: 1, position: 'relative', mx: { xs: 1, md: 4 } }}>
+            <input
+              type="text"
+              placeholder="Search for products..."
+              style={{
+                width: '100%',
+                padding: '12px 40px 12px 16px',
+                borderRadius: 8,
+                border: '1px solid rgba(255,255,255,0.3)',
+                background: 'rgba(255,255,255,0.05)',
+                color: '#fff',
+                fontSize: 15,
+                outline: 'none',
+                transition: 'all 0.2s ease',
+              }}
+            />
+            <SearchIcon sx={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', color: 'rgba(255,255,255,0.7)' }} />
+          </Box>
+          {/* Right: Profile & Cart */}
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: { xs: 1, md: 2 }, flex: '0 0 auto' }}>
+            <IconButton sx={{ color: '#fff', '&:hover': { bgcolor: 'rgba(255,255,255,0.1)' } }}>
+              <PersonOutlineIcon sx={{ fontSize: { xs: 22, md: 26 } }} />
+            </IconButton>
+            <IconButton 
+              onClick={() => setCartOpen(true)} 
+              sx={{ color: '#fff', '&:hover': { bgcolor: 'rgba(255,255,255,0.1)' } }}
+            >
+              <Badge 
+                badgeContent={cart.length} 
+                color="primary"
+                sx={{ '& .MuiBadge-badge': { bgcolor: '#fff', color: '#111' } }}
+              >
+                <ShoppingCartIcon sx={{ fontSize: { xs: 22, md: 26 } }} />
+              </Badge>
+            </IconButton>
+          </Box>
+        </Box>
+        {/* Bottom row: Categories */}
+        <Box sx={{ width: '100%', maxWidth: 900, display: 'flex', justifyContent: 'center', gap: 4, mt: 1 }}>
+          <Typography sx={{ color: '#fff', fontSize: 16, mx: 2, cursor: 'pointer', fontWeight: 500 }}>Candles</Typography>
+          <Typography sx={{ color: '#fff', fontSize: 16, mx: 2, cursor: 'pointer', fontWeight: 500 }}>Forever Flowers</Typography>
+          <Typography sx={{ color: '#fff', fontSize: 16, mx: 2, cursor: 'pointer', fontWeight: 500 }}>Gift Sets</Typography>
+          <Typography sx={{ color: '#fff', fontSize: 16, mx: 2, cursor: 'pointer', fontWeight: 500 }}>Decor Essentials</Typography>
+          <Typography sx={{ color: '#fff', fontSize: 16, mx: 2, cursor: 'pointer', fontWeight: 500 }}>Our Story</Typography>
+          <Typography sx={{ color: '#fff', fontSize: 16, mx: 2, cursor: 'pointer', fontWeight: 500 }}>Contact Us</Typography>
+        </Box>
       </Box>
 
-      <Container maxWidth="md" sx={{ mt: 2 }}>
-        <Typography variant="h3" align="center" fontWeight={700} gutterBottom sx={{ color: '#222', mb: 4 }}>
-          Discover Unique Candle Art
+      {/* Hero Slider */}
+      <InfiniteSlider />
+
+      {/* Artworks/Grid Section */}
+      <Container maxWidth="lg" sx={{ mb: 4 }}>
+        <Typography variant="h4" fontWeight={700} align="center" sx={{ mb: 4 }}>
+          Featured Candle Art
         </Typography>
-        {loading && (
-          <Box display="flex" justifyContent="center" alignItems="center" minHeight="200px">
-            <CircularProgress />
-          </Box>
-        )}
-        {error && <Typography color="error" align="center">{error}</Typography>}
         <Grid container spacing={4}>
-          {artworks.map((art) => (
+          {loading && (
+            <Grid item xs={12} sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
+              <CircularProgress />
+            </Grid>
+          )}
+          {error && (
+            <Grid item xs={12}>
+              <Typography variant="body1" color="error" align="center">
+                {error}
+              </Typography>
+            </Grid>
+          )}
+          {!loading && !error && artworks.length === 0 && (
+            <Grid item xs={12}>
+              <Typography variant="body1" align="center" sx={{ py: 4 }}>
+                No artworks found.
+              </Typography>
+            </Grid>
+          )}
+          {!loading && !error && artworks.map((art) => (
             <Grid item xs={12} sm={6} md={4} key={art.id}>
-              <Card sx={{ borderRadius: 4, boxShadow: 3, bgcolor: '#fff', minHeight: 260 }}>
-                {/* Placeholder for product image */}
-                <Box sx={{ height: 160, bgcolor: '#f2e9e1', borderTopLeftRadius: 16, borderTopRightRadius: 16, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <Typography variant="h2" color="#e0b973">🕯️</Typography>
-                </Box>
+              <Card sx={{ borderRadius: 4, boxShadow: 3, overflow: 'hidden' }}>
+                <Box
+                  component="img"
+                  src={art.imageUrl}
+                  alt={art.title}
+                  sx={{
+                    width: '100%',
+                    height: 200,
+                    objectFit: 'cover',
+                    transition: 'transform 0.3s',
+                    '&:hover': {
+                      transform: 'scale(1.05)',
+                    },
+                  }}
+                />
                 <CardContent>
-                  <Typography variant="h6" fontWeight={600} gutterBottom sx={{ color: '#222' }}>
+                  <Typography variant="h6" fontWeight={600} gutterBottom>
                     {art.title}
                   </Typography>
-                  <Typography variant="body1" sx={{ color: '#888', mb: 1 }}>
-                    Price: <span style={{ color: '#222', fontWeight: 700 }}>₹{(art.price / 100).toLocaleString('en-IN')}</span>
+                  <Typography variant="body2" color="text.secondary" paragraph>
+                    {art.description}
+                  </Typography>
+                  <Typography variant="h6" fontWeight={700} color="primary">
+                    ₹{(art.price / 100).toLocaleString('en-IN')}
                   </Typography>
                 </CardContent>
-                <CardActions>
+                <CardActions sx={{ justifyContent: 'space-between', p: 2 }}>
                   <Button
-                    variant="outlined"
+                    variant="contained"
                     color="primary"
-                    fullWidth
-                    size="large"
-                    sx={{ borderRadius: 2, fontWeight: 600, mr: 1 }}
+                    size="small"
                     onClick={() => handleAddToCart(art)}
+                    sx={{ borderRadius: 20, px: 3, py: 1 }}
                   >
                     Add to Cart
                   </Button>
                   <Button
-                    variant="contained"
+                    variant="outlined"
                     color="primary"
-                    fullWidth
-                    size="large"
-                    sx={{ borderRadius: 2, fontWeight: 600 }}
+                    size="small"
                     onClick={() => handleBuy(art)}
-                    disabled={payingId === art.id}
+                    sx={{ borderRadius: 20, px: 3, py: 1 }}
                   >
-                    {payingId === art.id ? <CircularProgress size={24} color="inherit" /> : 'Buy Now'}
+                    Buy Now
                   </Button>
                 </CardActions>
               </Card>
@@ -348,6 +410,32 @@ function App() {
           ))}
         </Grid>
       </Container>
+
+      {/* Footer */}
+      <Box sx={{ py: 4, bgcolor: '#f7f7f7', borderTop: '1px solid #e0e0e0' }}>
+        <Container maxWidth="lg">
+          <Grid container spacing={3}>
+            <Grid item xs={12} md={6}>
+              <Typography variant="body2" color="text.secondary" align="center" sx={{ mb: 2 }}>
+                © 2023 Enlight Art Gallery. All rights reserved.
+              </Typography>
+              <Typography variant="body2" color="text.secondary" align="center">
+                Designed with ❤️ by Your Name
+              </Typography>
+            </Grid>
+            <Grid item xs={12} md={6}>
+              <Box sx={{ display: 'flex', justifyContent: { xs: 'center', md: 'flex-end' } }}>
+                <Button color="inherit" size="small" sx={{ fontWeight: 500 }}>
+                  Privacy Policy
+                </Button>
+                <Button color="inherit" size="small" sx={{ fontWeight: 500 }}>
+                  Terms of Service
+                </Button>
+              </Box>
+            </Grid>
+          </Grid>
+        </Container>
+      </Box>
     </>
   );
 }

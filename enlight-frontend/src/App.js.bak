@@ -1,0 +1,411 @@
+import React, { useEffect, useState } from 'react';
+import AppBar from '@mui/material/AppBar';
+import Box from '@mui/material/Box';
+import Toolbar from '@mui/material/Toolbar';
+import Typography from '@mui/material/Typography';
+import Container from '@mui/material/Container';
+import Grid from '@mui/material/Grid';
+import Card from '@mui/material/Card';
+import CardContent from '@mui/material/CardContent';
+import CardActions from '@mui/material/CardActions';
+import Button from '@mui/material/Button';
+import CircularProgress from '@mui/material/CircularProgress';
+// ...existing code...
+// ...existing code...
+import Drawer from '@mui/material/Drawer';
+import IconButton from '@mui/material/IconButton';
+import List from '@mui/material/List';
+import ListItem from '@mui/material/ListItem';
+import ListItemText from '@mui/material/ListItemText';
+import Divider from '@mui/material/Divider';
+import DeleteIcon from '@mui/icons-material/Delete';
+import AddIcon from '@mui/icons-material/Add';
+import RemoveIcon from '@mui/icons-material/Remove';
+import CategoryIcon from '@mui/icons-material/Category';
+import InfiniteSlider from './components/InfiniteSlider';
+import SearchIcon from '@mui/icons-material/Search';
+import PersonOutlineIcon from '@mui/icons-material/PersonOutline';
+import ShoppingCartIcon from '@mui/icons-material/ShoppingCart';
+import Badge from '@mui/material/Badge';
+
+function loadRazorpayScript(src) {
+  return new Promise((resolve) => {
+    const script = document.createElement('script');
+    script.src = src;
+    script.onload = () => resolve(true);
+    script.onerror = () => resolve(false);
+    document.body.appendChild(script);
+  });
+}
+
+function App() {
+  const [artworks, setArtworks] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [payingId, setPayingId] = useState(null);
+  const [cart, setCart] = useState([]);
+  const [cartOpen, setCartOpen] = useState(false);
+
+  // Flashing/changing promo text
+  const promoMessages = [
+    'Get 10% off on your first purchase with code FLORIYNEW',
+    'Welcome to Enlight store',
+    'Handcrafted candles & art gifts',
+    'Free shipping on orders over ₹999',
+  ];
+  const [flashingText, setFlashingText] = useState(promoMessages[0]);
+  useEffect(() => {
+    let idx = 0;
+    const interval = setInterval(() => {
+      idx = (idx + 1) % promoMessages.length;
+      setFlashingText(promoMessages[idx]);
+    }, 2000);
+    return () => clearInterval(interval);
+  }, []);
+  // Handle checkout for all cart items
+  const handleCheckout = async () => {
+    if (cart.length === 0) return;
+    // Calculate total amount
+    const totalAmount = cart.reduce((sum, item) => sum + item.price * item.qty, 0);
+    // Load Razorpay script
+    const res = await loadRazorpayScript('https://checkout.razorpay.com/v1/checkout.js');
+    if (!res) {
+      alert('Failed to load Razorpay SDK.');
+      return;
+    }
+    // Create order on backend
+    let order;
+    try {
+      const orderRes = await fetch('http://localhost:5000/api/create-order', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ amount: totalAmount })
+      });
+      order = await orderRes.json();
+    } catch (err) {
+      alert('Failed to connect to backend.');
+      return;
+    }
+    if (!order.id) {
+      alert('Failed to create order. ' + (order.error || ''));
+      return;
+    }
+    const options = {
+      key: 'YOUR_RAZORPAY_KEY_ID', // Replace with your Razorpay key id
+      amount: order.amount,
+      currency: order.currency,
+      name: 'Enlight Art Gallery',
+      description: 'Purchase from Enlight Art Gallery',
+      order_id: order.id,
+      handler: function (response) {
+        alert('Payment successful! Payment ID: ' + response.razorpay_payment_id);
+        setCart([]);
+        setCartOpen(false);
+      {/* Hero/Banner Section removed as requested */}
+  const handleAddToCart = (art) => {
+    setCart((prev) => {
+      const exists = prev.find((item) => item.id === art.id);
+      if (exists) {
+        return prev.map((item) => item.id === art.id ? { ...item, qty: item.qty + 1 } : item);
+      }
+      return [...prev, { ...art, qty: 1 }];
+    });
+  };
+
+
+  const handleRemoveFromCart = (id) => {
+    setCart((prev) => prev.filter((item) => item.id !== id));
+  };
+
+  const handleIncreaseQty = (id) => {
+    setCart((prev) => prev.map((item) => item.id === id ? { ...item, qty: item.qty + 1 } : item));
+  };
+
+  const handleDecreaseQty = (id) => {
+    setCart((prev) => prev.map((item) => {
+      if (item.id === id) {
+        if (item.qty > 1) return { ...item, qty: item.qty - 1 };
+        // If qty is 1, remove item
+        return null;
+      }
+      return item;
+    }).filter(Boolean));
+  };
+
+  const handleBuy = async (art) => {
+    setPayingId(art.id);
+    const res = await loadRazorpayScript('https://checkout.razorpay.com/v1/checkout.js');
+    if (!res) {
+      alert('Failed to load Razorpay SDK.');
+      setPayingId(null);
+      return;
+    }
+
+    // Create order on backend
+    let order;
+    try {
+      const orderRes = await fetch('http://localhost:5000/api/create-order', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ amount: art.price })
+      });
+      order = await orderRes.json();
+    } catch (err) {
+      alert('Failed to connect to backend.');
+      setPayingId(null);
+      return;
+    }
+    if (!order.id) {
+      alert('Failed to create order. ' + (order.error || ''));
+      setPayingId(null);
+      return;
+    }
+
+  const options = {
+    key: 'YOUR_RAZORPAY_KEY_ID', // Replace with your Razorpay key id
+    amount: order.amount,
+    currency: order.currency,
+    name: 'Enlight Art Gallery',
+    description: art.title,
+    order_id: order.id,
+    handler: function (response) {
+      alert('Payment successful! Payment ID: ' + response.razorpay_payment_id);
+    },
+    prefill: {
+      name: '',
+      email: '',
+      contact: ''
+    },
+    theme: {
+      color: '#3399cc'
+    }
+  };
+  const rzp = new window.Razorpay(options);
+  rzp.open();
+  setPayingId(null);
+  } // <-- close handleBuy
+
+  // ...rest of App component (JSX) should be here...
+  return (
+    <>
+      {/* AppBar and Cart Drawer */}
+      <Drawer anchor="right" open={cartOpen} onClose={() => setCartOpen(false)}>
+        <Box sx={{ width: 350, p: 2 }} role="presentation">
+          <Typography variant="h6" fontWeight={700} sx={{ mb: 2 }}>Your Cart</Typography>
+          <Divider />
+          <List sx={{ flexGrow: 1 }}>
+            {cart.length === 0 && (
+              <ListItem>
+                <ListItemText primary="Cart is empty" />
+              </ListItem>
+            )}
+            {cart.map((item) => (
+              <ListItem key={item.id} secondaryAction={
+                <>
+                  <IconButton edge="end" aria-label="remove" onClick={() => handleDecreaseQty(item.id)} size="small">
+                    <RemoveIcon />
+                  </IconButton>
+                  <span style={{ margin: '0 8px', fontWeight: 600 }}>{item.qty}</span>
+                  <IconButton edge="end" aria-label="add" onClick={() => handleIncreaseQty(item.id)} size="small">
+                    <AddIcon />
+                  </IconButton>
+                  <IconButton edge="end" aria-label="delete" onClick={() => handleRemoveFromCart(item.id)} size="small">
+                    <DeleteIcon />
+                  </IconButton>
+                </>
+              }>
+                <ListItemText
+                  primary={item.title}
+                  secondary={`₹${((item.price * item.qty) / 100).toLocaleString('en-IN')}`}
+                />
+              </ListItem>
+            ))}
+          </List>
+          {/* Cart total and checkout */}
+          <Box sx={{ p: 2, borderTop: '1px solid #eee', background: '#fafafa' }}>
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
+              <span style={{ fontWeight: 600 }}>Total:</span>
+              <span style={{ fontWeight: 700, fontSize: 18 }}>
+                ₹{(cart.reduce((sum, item) => sum + item.price * item.qty, 0) / 100).toLocaleString('en-IN')}
+              </span>
+            </Box>
+            <Button
+              variant="contained"
+              color="primary"
+              fullWidth
+              disabled={cart.length === 0}
+              onClick={handleCheckout}
+            >
+              Checkout
+            </Button>
+          </Box>
+        </Box>
+      </Drawer>
+
+      {/* Promo Bar and Search Section */}
+      <Box sx={{ width: '100%', bgcolor: '#111', color: '#fff', py: 1, px: { xs: 1, md: 4 }, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+        {/* Top row: site name (left), promo (center), icons (right) */}
+        <Box sx={{ width: '100%', maxWidth: 1400, display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1 }}>
+          {/* Left: Site Name */}
+          <Typography sx={{ fontWeight: 700, fontSize: 22, letterSpacing: 1, color: '#fff', flex: '0 0 auto' }}>
+            Enlight Candle Art
+          </Typography>
+          {/* Center: Flashing Promo */}
+          <Typography sx={{ fontSize: 15, fontWeight: 500, minHeight: 24, transition: 'opacity 0.4s', opacity: 1, flex: 1, textAlign: 'center' }}>
+            {flashingText}
+          </Typography>
+          {/* Right: Profile & Cart */}
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, flex: '0 0 auto' }}>
+            <PersonOutlineIcon sx={{ fontSize: 26, color: '#fff', cursor: 'pointer' }} />
+            <IconButton onClick={() => setCartOpen(true)} sx={{ color: '#fff' }}>
+              <Badge badgeContent={cart.length} color="primary">
+                <ShoppingCartIcon sx={{ fontSize: 26 }} />
+              </Badge>
+            </IconButton>
+          </Box>
+        </Box>
+        {/* Middle row: Search */}
+        <Box sx={{ width: '100%', maxWidth: 700, display: 'flex', alignItems: 'center', mb: 1 }}>
+          <Box sx={{ flex: 1, position: 'relative' }}>
+            <input
+              type="text"
+              placeholder="Search"
+              style={{
+                width: '100%',
+                padding: '10px 40px 10px 16px',
+                borderRadius: 6,
+                border: '1px solid #fff',
+                background: 'transparent',
+                color: '#fff',
+                fontSize: 16,
+                outline: 'none',
+              }}
+            />
+            <SearchIcon sx={{ position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)', color: '#fff' }} />
+          </Box>
+        </Box>
+        {/* Bottom row: Categories */}
+        <Box sx={{ width: '100%', maxWidth: 900, display: 'flex', justifyContent: 'center', gap: 4, mt: 1 }}>
+          <Typography sx={{ color: '#fff', fontSize: 16, mx: 2, cursor: 'pointer', fontWeight: 500 }}>Candles</Typography>
+          <Typography sx={{ color: '#fff', fontSize: 16, mx: 2, cursor: 'pointer', fontWeight: 500 }}>Forever Flowers</Typography>
+          <Typography sx={{ color: '#fff', fontSize: 16, mx: 2, cursor: 'pointer', fontWeight: 500 }}>Gift Sets</Typography>
+          <Typography sx={{ color: '#fff', fontSize: 16, mx: 2, cursor: 'pointer', fontWeight: 500 }}>Decor Essentials</Typography>
+          <Typography sx={{ color: '#fff', fontSize: 16, mx: 2, cursor: 'pointer', fontWeight: 500 }}>Our Story</Typography>
+          <Typography sx={{ color: '#fff', fontSize: 16, mx: 2, cursor: 'pointer', fontWeight: 500 }}>Contact Us</Typography>
+        </Box>
+      </Box>
+
+      {/* Hero/Banner section removed as requested */}
+
+      {/* ...hero/banner, slider, and category navigation removed as requested... */}
+
+      {/* Artworks/Grid Section */}
+      <Container maxWidth="lg" sx={{ mb: 4 }}>
+        <Typography variant="h4" fontWeight={700} align="center" sx={{ mb: 4 }}>
+          Featured Candle Art
+        </Typography>
+        <Grid container spacing={4}>
+          {loading && (
+            <Grid item xs={12} sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
+              <CircularProgress />
+            </Grid>
+          )}
+          {error && (
+            <Grid item xs={12}>
+              <Typography variant="body1" color="error" align="center">
+                {error}
+              </Typography>
+            </Grid>
+          )}
+          {!loading && !error && artworks.length === 0 && (
+            <Grid item xs={12}>
+              <Typography variant="body1" align="center" sx={{ py: 4 }}>
+                No artworks found.
+              </Typography>
+            </Grid>
+          )}
+          {!loading && !error && artworks.map((art) => (
+            <Grid item xs={12} sm={6} md={4} key={art.id}>
+              <Card sx={{ borderRadius: 4, boxShadow: 3, overflow: 'hidden' }}>
+                <Box
+                  component="img"
+                  src={art.imageUrl}
+                  alt={art.title}
+                  sx={{
+                    width: '100%',
+                    height: 200,
+                    objectFit: 'cover',
+                    transition: 'transform 0.3s',
+                    '&:hover': {
+                      transform: 'scale(1.05)',
+                    },
+                  }}
+                />
+                <CardContent>
+                  <Typography variant="h6" fontWeight={600} gutterBottom>
+                    {art.title}
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary" paragraph>
+                    {art.description}
+                  </Typography>
+                  <Typography variant="h6" fontWeight={700} color="primary">
+                    ₹{(art.price / 100).toLocaleString('en-IN')}
+                  </Typography>
+                </CardContent>
+                <CardActions sx={{ justifyContent: 'space-between', p: 2 }}>
+                  <Button
+                    variant="contained"
+                    color="primary"
+                    size="small"
+                    onClick={() => handleAddToCart(art)}
+                    sx={{ borderRadius: 20, px: 3, py: 1 }}
+                  >
+                    Add to Cart
+                  </Button>
+                  <Button
+                    variant="outlined"
+                    color="primary"
+                    size="small"
+                    onClick={() => handleBuy(art)}
+                    sx={{ borderRadius: 20, px: 3, py: 1 }}
+                  >
+                    Buy Now
+                  </Button>
+                </CardActions>
+              </Card>
+            </Grid>
+          ))}
+        </Grid>
+      </Container>
+
+      {/* Footer */}
+      <Box sx={{ py: 4, bgcolor: '#f7f7f7', borderTop: '1px solid #e0e0e0' }}>
+        <Container maxWidth="lg">
+          <Grid container spacing={3}>
+            <Grid item xs={12} md={6}>
+              <Typography variant="body2" color="text.secondary" align="center" sx={{ mb: 2 }}>
+                © 2023 Enlight Art Gallery. All rights reserved.
+              </Typography>
+              <Typography variant="body2" color="text.secondary" align="center">
+                Designed with ❤️ by Your Name
+              </Typography>
+            </Grid>
+            <Grid item xs={12} md={6}>
+              <Box sx={{ display: 'flex', justifyContent: { xs: 'center', md: 'flex-end' } }}>
+                <Button color="inherit" size="small" sx={{ fontWeight: 500 }}>
+                  Privacy Policy
+                </Button>
+                <Button color="inherit" size="small" sx={{ fontWeight: 500 }}>
+                  Terms of Service
+                </Button>
+              </Box>
+            </Grid>
+          </Grid>
+        </Container>
+      </Box>
+
+    </>
+  );
+}
+
+export default App;
