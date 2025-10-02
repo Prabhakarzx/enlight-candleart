@@ -23,6 +23,7 @@ import CategoryIcon from '@mui/icons-material/Category';
 import SearchIcon from '@mui/icons-material/Search';
 import PersonOutlineIcon from '@mui/icons-material/PersonOutline';
 import ShoppingCartIcon from '@mui/icons-material/ShoppingCart';
+import CloseIcon from '@mui/icons-material/Close';
 import Badge from '@mui/material/Badge';
 import InfiniteSlider from './components/InfiniteSlider';
 
@@ -46,7 +47,7 @@ function App() {
 
   // Flashing/changing promo text
   const promoMessages = [
-    'Get 10% off on your first purchase with code FLORIYNEW',
+    'Get 10% off on your first purchase with code TULIKANEW',
     'Welcome to Enlight store',
     'Handcrafted candles & art gifts',
     'Free shipping on orders over ₹999',
@@ -83,6 +84,8 @@ function App() {
       }
       return [...prev, { ...art, qty: 1 }];
     });
+    // Open cart drawer immediately
+    setCartOpen(true);
   };
 
   const handleRemoveFromCart = (id) => {
@@ -215,54 +218,252 @@ function App() {
   return (
     <>
       {/* Cart Drawer */}
-      <Drawer anchor="right" open={cartOpen} onClose={() => setCartOpen(false)}>
-        <Box sx={{ width: 350, p: 2 }} role="presentation">
-          <Typography variant="h6" fontWeight={700} sx={{ mb: 2 }}>Your Cart</Typography>
-          <Divider />
-          <List sx={{ flexGrow: 1 }}>
+      <Drawer 
+        anchor="right" 
+        open={cartOpen} 
+        onClose={() => setCartOpen(false)}
+        transitionDuration={250}
+        SlideProps={{
+          timeout: { enter: 250, exit: 200 }
+        }}
+        PaperProps={{
+          sx: {
+            width: { xs: '100%', sm: 400 },
+            bgcolor: '#fff',
+            boxShadow: '-4px 0 8px rgba(0,0,0,0.1)'
+          }
+        }}
+      >
+        <Box sx={{ 
+          height: '100%', 
+          display: 'flex', 
+          flexDirection: 'column',
+          p: 0
+        }} role="presentation">
+          {/* Cart Header */}
+          <Box sx={{ 
+            p: 3, 
+            display: 'flex', 
+            flexDirection: 'column',
+            gap: 2,
+            borderBottom: '1px solid #eee'
+          }}>
+            <Box sx={{ 
+              display: 'flex', 
+              alignItems: 'center', 
+              justifyContent: 'space-between'
+            }}>
+              <Typography sx={{ 
+                fontSize: '1.5rem',
+                color: '#111',
+                fontWeight: 500
+              }}>
+                Your cart
+              </Typography>
+              <IconButton 
+                onClick={() => setCartOpen(false)}
+                sx={{ 
+                  p: 1,
+                  color: '#111',
+                  '&:hover': { 
+                    bgcolor: 'transparent',
+                  }
+                }}
+                aria-label="close cart"
+              >
+                <CloseIcon sx={{ fontSize: 24 }} />
+              </IconButton>
+            </Box>
+            <Box sx={{ 
+              display: 'flex', 
+              justifyContent: 'space-between',
+              px: 1,
+              color: '#666',
+              fontSize: '0.9rem',
+              fontWeight: 500
+            }}>
+              <Typography>PRODUCT</Typography>
+              <Typography>TOTAL</Typography>
+            </Box>
+          </Box>
+          <List sx={{ 
+            flexGrow: 1, 
+            overflowY: 'auto',
+            py: 0,
+            '&::-webkit-scrollbar': {
+              width: '6px',
+            },
+            '&::-webkit-scrollbar-thumb': {
+              backgroundColor: 'rgba(0,0,0,0.2)',
+              borderRadius: '3px',
+            },
+          }}>
             {cart.length === 0 && (
               <ListItem>
                 <ListItemText primary="Cart is empty" />
               </ListItem>
             )}
             {cart.map((item) => (
-              <ListItem key={item.id} secondaryAction={
-                <>
-                  <IconButton edge="end" aria-label="remove" onClick={() => handleDecreaseQty(item.id)} size="small">
-                    <RemoveIcon />
+              <ListItem 
+                key={item.id} 
+                sx={{ 
+                  py: 2,
+                  px: 3,
+                  borderBottom: '1px solid #eee',
+                  display: 'flex',
+                  alignItems: 'flex-start',
+                  gap: 3
+                }}
+              >
+                <Box sx={{ 
+                  display: 'flex', 
+                  flex: 1,
+                  gap: 2
+                }}>
+                  <Box
+                    component="img"
+                    src={item.imageUrl}
+                    alt={item.title}
+                    sx={{
+                      width: 70,
+                      height: 70,
+                      objectFit: 'cover',
+                      borderRadius: 1
+                    }}
+                  />
+                  <Box sx={{ flex: 1 }}>
+                    <Typography sx={{ 
+                      fontWeight: 500, 
+                      mb: 1,
+                      fontSize: '0.95rem'
+                    }}>
+                      {item.title}
+                    </Typography>
+                    <Typography sx={{ 
+                      color: '#666',
+                      fontSize: '0.9rem',
+                      mb: 1
+                    }}>
+                      Rs. {(item.price / 100).toLocaleString('en-IN')}
+                    </Typography>
+                    <Box sx={{ 
+                      display: 'flex', 
+                      alignItems: 'center',
+                      gap: 1
+                    }}>
+                      <IconButton 
+                        onClick={() => handleDecreaseQty(item.id)} 
+                        sx={{ 
+                          p: 0.5,
+                          '&:hover': { bgcolor: 'transparent' }
+                        }}
+                      >
+                        <RemoveIcon sx={{ fontSize: 18 }} />
+                      </IconButton>
+                      <Typography sx={{ 
+                        minWidth: '30px',
+                        textAlign: 'center',
+                        fontSize: '0.95rem'
+                      }}>
+                        {item.qty}
+                      </Typography>
+                      <IconButton 
+                        onClick={() => handleIncreaseQty(item.id)} 
+                        sx={{ 
+                          p: 0.5,
+                          '&:hover': { bgcolor: 'transparent' }
+                        }}
+                      >
+                        <AddIcon sx={{ fontSize: 18 }} />
+                      </IconButton>
+                    </Box>
+                  </Box>
+                </Box>
+                <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 2 }}>
+                  <Typography sx={{ 
+                    fontWeight: 500,
+                    fontSize: '0.95rem',
+                    color: '#111'
+                  }}>
+                    Rs. {((item.price * item.qty) / 100).toLocaleString('en-IN')}
+                  </Typography>
+                  <IconButton 
+                    onClick={() => handleRemoveFromCart(item.id)}
+                    sx={{ 
+                      p: 0.5,
+                      '&:hover': { bgcolor: 'transparent' }
+                    }}
+                  >
+                    <DeleteIcon sx={{ fontSize: 18, color: '#666' }} />
                   </IconButton>
-                  <span style={{ margin: '0 8px', fontWeight: 600 }}>{item.qty}</span>
-                  <IconButton edge="end" aria-label="add" onClick={() => handleIncreaseQty(item.id)} size="small">
-                    <AddIcon />
-                  </IconButton>
-                  <IconButton edge="end" aria-label="delete" onClick={() => handleRemoveFromCart(item.id)} size="small">
-                    <DeleteIcon />
-                  </IconButton>
-                </>
-              }>
-                <ListItemText
-                  primary={item.title}
-                  secondary={`₹${((item.price * item.qty) / 100).toLocaleString('en-IN')}`}
-                />
+                </Box>
               </ListItem>
             ))}
           </List>
+          {/* Order Instructions */}
+          <Box sx={{ px: 3, py: 2 }}>
+            <Button
+              sx={{
+                width: '100%',
+                py: 1.5,
+                color: '#111',
+                borderColor: '#ddd',
+                '&:hover': {
+                  borderColor: '#111',
+                  bgcolor: 'transparent'
+                }
+              }}
+              variant="outlined"
+            >
+              Order special instructions
+            </Button>
+          </Box>
+
           {/* Cart total and checkout */}
-          <Box sx={{ p: 2, borderTop: '1px solid #eee', background: '#fafafa' }}>
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
-              <span style={{ fontWeight: 600 }}>Total:</span>
-              <span style={{ fontWeight: 700, fontSize: 18 }}>
-                ₹{(cart.reduce((sum, item) => sum + item.price * item.qty, 0) / 100).toLocaleString('en-IN')}
-              </span>
+          <Box sx={{ px: 3, py: 2, borderTop: '1px solid #eee' }}>
+            <Box sx={{ 
+              display: 'flex', 
+              justifyContent: 'space-between', 
+              alignItems: 'center', 
+              mb: 1 
+            }}>
+              <Typography sx={{ 
+                fontWeight: 500,
+                fontSize: '0.95rem'
+              }}>
+                Estimated total
+              </Typography>
+              <Typography sx={{ 
+                fontWeight: 500,
+                fontSize: '0.95rem'
+              }}>
+                Rs. {(cart.reduce((sum, item) => sum + item.price * item.qty, 0) / 100).toLocaleString('en-IN')}
+              </Typography>
             </Box>
+            <Typography sx={{ 
+              color: '#666',
+              fontSize: '0.85rem',
+              mb: 2
+            }}>
+              Taxes included. Discounts and shipping calculated at checkout.
+            </Typography>
             <Button
               variant="contained"
-              color="primary"
               fullWidth
               disabled={cart.length === 0}
               onClick={handleCheckout}
+              sx={{
+                bgcolor: '#111',
+                color: '#fff',
+                py: 1.5,
+                textTransform: 'none',
+                fontSize: '0.95rem',
+                '&:hover': {
+                  bgcolor: '#000'
+                }
+              }}
             >
-              Checkout
+              Check out
             </Button>
           </Box>
         </Box>
@@ -271,36 +472,87 @@ function App() {
       {/* Promo Bar and Search Section */}
       <Box sx={{ width: '100%', bgcolor: '#111', color: '#fff', py: 2, px: { xs: 2, md: 4 }, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
         {/* Flashing Promo */}
-        <Typography sx={{ fontSize: 15, fontWeight: 500, minHeight: 24, transition: 'opacity 0.4s', opacity: 1, mb: 2 }}>
+        <Typography 
+          sx={{ 
+            fontSize: 15, 
+            fontWeight: 500, 
+            minHeight: 24, 
+            mb: 2,
+            animation: 'fadeInOut 0.8s ease-in-out',
+            '@keyframes fadeInOut': {
+              '0%': { opacity: 0, transform: 'translateY(-5px)' },
+              '100%': { opacity: 1, transform: 'translateY(0)' },
+            },
+          }}
+        >
           {flashingText}
         </Typography>
         {/* Main Navigation Row */}
-        <Box sx={{ width: '100%', maxWidth: 1400, display: 'flex', alignItems: 'center', gap: { xs: 2, md: 4 } }}>
+        <Box sx={{ 
+          width: '100%', 
+          maxWidth: 1400, 
+          display: 'flex', 
+          alignItems: 'center', 
+          justifyContent: 'space-between',
+          gap: { xs: 2, md: 3 }
+        }}>
           {/* Left: Site Name */}
-          <Typography sx={{ fontWeight: 700, fontSize: { xs: 18, md: 22 }, letterSpacing: 1, color: '#fff', flex: '0 0 auto', whiteSpace: 'nowrap' }}>
+          <Typography sx={{ 
+            fontWeight: 700, 
+            fontSize: { xs: 18, md: 22 }, 
+            letterSpacing: 1, 
+            color: '#fff', 
+            flex: '0 0 auto', 
+            whiteSpace: 'nowrap',
+            minWidth: { xs: '140px', md: '200px' }
+          }}>
             Enlight Candle Art
           </Typography>
           {/* Center: Search */}
-          <Box sx={{ flex: 1, position: 'relative', mx: { xs: 1, md: 4 } }}>
-            <input
-              type="text"
-              placeholder="Search for products..."
-              style={{
-                width: '100%',
-                padding: '12px 40px 12px 16px',
-                borderRadius: 8,
-                border: '1px solid rgba(255,255,255,0.3)',
-                background: 'rgba(255,255,255,0.05)',
-                color: '#fff',
-                fontSize: 15,
-                outline: 'none',
-                transition: 'all 0.2s ease',
-              }}
+          <Box sx={{ 
+            flex: '1 1 auto', 
+            display: 'flex', 
+            justifyContent: 'center', 
+            maxWidth: '500px',
+            px: { xs: 1, md: 2 }
+          }}>
+            <Box sx={{ width: '100%', position: 'relative' }}>
+              <input
+                type="text"
+                placeholder="Search for products..."
+                style={{
+                  width: '100%',
+                  padding: '10px 36px 10px 14px',
+                  borderRadius: 6,
+                  border: '1px solid rgba(255,255,255,0.3)',
+                  background: 'rgba(255,255,255,0.05)',
+                  color: '#fff',
+                  fontSize: 14,
+                  outline: 'none',
+                  transition: 'all 0.3s ease',
+                }}
+              />
+              <SearchIcon 
+              sx={{ 
+                position: 'absolute', 
+                right: 12, 
+                top: '50%', 
+                transform: 'translateY(-50%)', 
+                color: 'rgba(255,255,255,0.5)',
+                transition: 'color 0.3s ease',
+              }} 
             />
-            <SearchIcon sx={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', color: 'rgba(255,255,255,0.7)' }} />
+            </Box>
           </Box>
           {/* Right: Profile & Cart */}
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: { xs: 1, md: 2 }, flex: '0 0 auto' }}>
+          <Box sx={{ 
+            display: 'flex', 
+            alignItems: 'center', 
+            gap: { xs: 1, md: 2 }, 
+            flex: '0 0 auto',
+            minWidth: { xs: '80px', md: '100px' },
+            justifyContent: 'flex-end'
+          }}>
             <IconButton sx={{ color: '#fff', '&:hover': { bgcolor: 'rgba(255,255,255,0.1)' } }}>
               <PersonOutlineIcon sx={{ fontSize: { xs: 22, md: 26 } }} />
             </IconButton>
