@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo, Suspense } from 'react';
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
 import Container from '@mui/material/Container';
@@ -23,8 +23,12 @@ import PersonOutlineIcon from '@mui/icons-material/PersonOutline';
 import ShoppingCartIcon from '@mui/icons-material/ShoppingCart';
 import CloseIcon from '@mui/icons-material/Close';
 import Badge from '@mui/material/Badge';
-import InfiniteSlider from './components/InfiniteSlider';
-import { Routes, Route, Navigate, useLocation, useNavigate } from 'react-router-dom';
+import { Routes, Route, Navigate, useLocation, useNavigate, Link } from 'react-router-dom';
+
+const InfiniteSlider = React.lazy(() => import('./components/InfiniteSlider'));
+const HorizontalScrollSection = React.lazy(() => import('./components/HorizontalScrollSection'));
+const FeaturedSection = React.lazy(() => import('./components/FeaturedSection'));
+const CategoryGrid = React.lazy(() => import('./components/CategoryGrid'));
 
 const PROMO_MESSAGES = [
   'Get 10% off on your first purchase with code TULIKANEW',
@@ -48,21 +52,51 @@ function App() {
   const location = useLocation();
   const isSearchPage = location.pathname.startsWith('/search');
   const [artworks, setArtworks] = useState([]);
+  const [newArrivals, setNewArrivals] = useState([]);
+  const [bestsellers, setBestsellers] = useState([]);
+  const [signatureProducts, setSignatureProducts] = useState([]);
+  const [premiumScented, setPremiumScented] = useState([]);
+  const [pillarCandles, setPillarCandles] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [cart, setCart] = useState([]);
   const [cartOpen, setCartOpen] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
-  // Search & filtering state
-  const [searchQuery, setSearchQuery] = useState('');
-  const [filteredArtworks, setFilteredArtworks] = useState([]);
-  const [suggestions, setSuggestions] = useState([]);
-  const [showSuggestions, setShowSuggestions] = useState(false);
+// Search & filtering state
+const [searchQuery, setSearchQuery] = useState('');
+const [showSuggestions, setShowSuggestions] = useState(false);
 
-  // Flashing/changing promo text
-  const [flashingText, setFlashingText] = useState(PROMO_MESSAGES[0]);
-  
-  useEffect(() => {
+// Flashing/changing promo text
+const [flashingText, setFlashingText] = useState(PROMO_MESSAGES[0]);
+
+const suggestions = useMemo(() => {
+  if (!searchQuery || isSearchPage) {
+    return [];
+  }
+  const lower = searchQuery.toLowerCase();
+  return artworks
+    .filter((a) => a.title && a.title.toLowerCase().includes(lower))
+    .slice(0, 6);
+}, [searchQuery, artworks, isSearchPage]);
+
+const filteredArtworks = useMemo(() => {
+  if (isSearchPage) {
+    const params = new URLSearchParams(location.search);
+    const qParam = params.get('q') || '';
+    if (!qParam.trim()) {
+      return [];
+    } else {
+      const lowered = qParam.trim().toLowerCase();
+      return artworks.filter(
+        (a) =>
+          (a.title && a.title.toLowerCase().includes(lowered)) ||
+          (a.description && a.description.toLowerCase().includes(lowered))
+      );
+    }
+  } else {
+    return artworks;
+  }
+}, [isSearchPage, location.search, artworks]);  useEffect(() => {
     let idx = 0;
     const interval = setInterval(() => {
     idx = (idx + 1) % PROMO_MESSAGES.length;
@@ -72,56 +106,60 @@ function App() {
   }, []);
 
   useEffect(() => {
+    // Fetch all artworks
     fetch('http://localhost:5000/api/artworks')
       .then((res) => res.json())
       .then((data) => {
         setArtworks(data);
         setLoading(false);
-        setFilteredArtworks(data); // initialize filtered list
       })
       .catch((err) => {
         setError('Failed to load artworks');
         setLoading(false);
       });
+
+    // Fetch new arrivals
+    fetch('http://localhost:5000/api/artworks/new-arrivals')
+      .then((res) => res.json())
+      .then((data) => setNewArrivals(data))
+      .catch((err) => console.error('Failed to load new arrivals', err));
+
+    // Fetch bestsellers
+    fetch('http://localhost:5000/api/artworks/bestsellers')
+      .then((res) => res.json())
+      .then((data) => setBestsellers(data))
+      .catch((err) => console.error('Failed to load bestsellers', err));
+
+    // Fetch signature/featured products
+    fetch('http://localhost:5000/api/artworks/featured')
+      .then((res) => res.json())
+      .then((data) => setSignatureProducts(data))
+      .catch((err) => console.error('Failed to load signature products', err));
+
+    // Fetch premium scented
+    fetch('http://localhost:5000/api/artworks/category/premium-scented')
+      .then((res) => res.json())
+      .then((data) => setPremiumScented(data))
+      .catch((err) => console.error('Failed to load premium scented', err));
+
+    // Fetch pillar candles
+    fetch('http://localhost:5000/api/artworks/category/pillar')
+      .then((res) => res.json())
+      .then((data) => setPillarCandles(data))
+      .catch((err) => console.error('Failed to load pillar candles', err));
   }, []);
 
-  // Derived suggestions when typing on home view
-  useEffect(() => {
-    if (!searchQuery || isSearchPage) {
-      setSuggestions([]);
-      return;
-    }
-    const lower = searchQuery.toLowerCase();
-    const matches = artworks
-      .filter((a) => a.title && a.title.toLowerCase().includes(lower))
-      .slice(0, 6);
-    setSuggestions(matches);
-  }, [searchQuery, artworks, isSearchPage]);
 
-  // Sync filtered artworks with route/query params
+
+  // Sync search query with route params
   useEffect(() => {
     if (isSearchPage) {
       const params = new URLSearchParams(location.search);
       const qParam = params.get('q') || '';
       setSearchQuery((prev) => (prev === qParam ? prev : qParam));
-
-      if (!qParam.trim()) {
-        setFilteredArtworks([]);
-      } else {
-        const lowered = qParam.trim().toLowerCase();
-        setFilteredArtworks(
-          artworks.filter(
-            (a) =>
-              (a.title && a.title.toLowerCase().includes(lowered)) ||
-              (a.description && a.description.toLowerCase().includes(lowered))
-          )
-        );
-      }
       setShowSuggestions(false);
-    } else {
-      setFilteredArtworks(artworks);
     }
-  }, [isSearchPage, location.search, artworks]);
+  }, [isSearchPage, location.search]);
 
   useEffect(() => {
     if (isSearchPage) {
@@ -139,8 +177,6 @@ function App() {
       }
       if (isSearchPage) {
         navigate('/');
-      } else {
-        setFilteredArtworks(artworks);
       }
       setShowSuggestions(false);
       return;
@@ -874,15 +910,21 @@ function App() {
                 <MenuIcon sx={{ fontSize: 22 }} />
               </IconButton>
               
-              <Typography sx={{ 
-                fontWeight: 700, 
-                fontSize: 15,
-                letterSpacing: 0.3, 
-                color: '#fff',
-                whiteSpace: 'nowrap',
-                overflow: 'hidden',
-                textOverflow: 'ellipsis'
-              }}>
+              <Typography
+                component={Link}
+                to="/"
+                onClick={() => setMenuOpen(false)}
+                sx={{ 
+                  fontWeight: 700, 
+                  fontSize: 15,
+                  letterSpacing: 0.3, 
+                  color: '#fff',
+                  whiteSpace: 'nowrap',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  textDecoration: 'none'
+                }}
+              >
                 Enlight Candle Art
               </Typography>
             </Box>
@@ -1018,16 +1060,22 @@ function App() {
 
           {/* Desktop Layout */}
           {/* Left: Site Name */}
-          <Typography sx={{ 
-            display: { xs: 'none', md: 'block' },
-            fontWeight: 700, 
-            fontSize: 22,
-            letterSpacing: 1, 
-            color: '#fff', 
-            flex: '0 0 auto',
-            whiteSpace: 'nowrap',
-            minWidth: '200px'
-          }}>
+          <Typography
+            component={Link}
+            to="/"
+            sx={{ 
+              display: { xs: 'none', md: 'block' },
+              fontWeight: 700, 
+              fontSize: 22,
+              letterSpacing: 1, 
+              color: '#fff', 
+              flex: '0 0 auto',
+              whiteSpace: 'nowrap',
+              minWidth: '200px',
+              textDecoration: 'none',
+              cursor: 'pointer'
+            }}
+          >
             Enlight Candle Art
           </Typography>
           
@@ -1186,16 +1234,98 @@ function App() {
         </Box>
       </Box>
 
-      {!isSearchPage && <InfiniteSlider />}
+      {!isSearchPage && (
+        <Suspense fallback={<Box sx={{ height: { xs: '60vh', sm: '70vh', md: '100vh' }, display: 'flex', alignItems: 'center', justifyContent: 'center' }}><CircularProgress /></Box>}>
+          <InfiniteSlider />
+        </Suspense>
+      )}
 
       <Routes>
         <Route
           path="/"
-          element={renderProductGrid(
-            artworks,
-            'Featured Candle Art',
-            'No artworks found.'
-          )}
+          element={
+            <>
+              {/* New Arrivals Section */}
+              {!loading && newArrivals.length > 0 && (
+                <Suspense fallback={<Box sx={{ py: 4, textAlign: 'center' }}><CircularProgress /></Box>}>
+                  <HorizontalScrollSection
+                    title="New Arrivals"
+                    subtitle="Discover our latest handcrafted candle creations"
+                    products={newArrivals}
+                    onAddToCart={handleAddToCart}
+                    onBuyNow={handleBuy}
+                    viewAllLink
+                  />
+                </Suspense>
+              )}
+
+              {/* Bestsellers Section */}
+              {!loading && bestsellers.length > 0 && (
+                <Suspense fallback={<Box sx={{ py: 4, textAlign: 'center' }}><CircularProgress /></Box>}>
+                  <HorizontalScrollSection
+                    title="Bestsellers"
+                    subtitle="Customer favorites that everyone loves"
+                    products={bestsellers}
+                    onAddToCart={handleAddToCart}
+                    onBuyNow={handleBuy}
+                    viewAllLink
+                  />
+                </Suspense>
+              )}
+
+              {/* Signature Candles - Featured Section */}
+              {!loading && signatureProducts.length > 0 && (
+                <Suspense fallback={<Box sx={{ py: 4, textAlign: 'center' }}><CircularProgress /></Box>}>
+                  <FeaturedSection
+                    title="Signature Candles"
+                    subtitle="Our exclusive signature blends, crafted with passion"
+                    featuredImage="https://images.unsplash.com/photo-1603006905003-be475563bc59?w=800"
+                    featuredTitle="Enlight Signature Collection"
+                    featuredDescription="Handcrafted with love, designed to inspire serenity and warmth in your space"
+                    products={signatureProducts}
+                    onAddToCart={handleAddToCart}
+                    onBuyNow={handleBuy}
+                  />
+                </Suspense>
+              )}
+
+              {/* Premium Scented Section */}
+              {!loading && premiumScented.length > 0 && (
+                <Suspense fallback={<Box sx={{ py: 4, textAlign: 'center' }}><CircularProgress /></Box>}>
+                  <HorizontalScrollSection
+                    title="Premium Scented"
+                    subtitle="Luxury fragrances for the most discerning customers"
+                    products={premiumScented}
+                    onAddToCart={handleAddToCart}
+                    onBuyNow={handleBuy}
+                    viewAllLink
+                  />
+                </Suspense>
+              )}
+
+              {/* Pillar Candles Section */}
+              {!loading && pillarCandles.length > 0 && (
+                <Suspense fallback={<Box sx={{ py: 4, textAlign: 'center' }}><CircularProgress /></Box>}>
+                  <HorizontalScrollSection
+                    title="Pillar Candles"
+                    subtitle="Classic pillar candles in various scents and sizes"
+                    products={pillarCandles}
+                    onAddToCart={handleAddToCart}
+                    onBuyNow={handleBuy}
+                    viewAllLink
+                  />
+                </Suspense>
+              )}
+
+              {/* Shop By Collections */}
+              <Suspense fallback={<Box sx={{ py: 4, textAlign: 'center' }}><CircularProgress /></Box>}>
+                <CategoryGrid
+                  title="Shop By Collections"
+                  subtitle="Browse our curated collections for every occasion"
+                />
+              </Suspense>
+            </>
+          }
         />
         <Route
           path="/search"

@@ -1,0 +1,294 @@
+# 🎨 Visual Layout Guide - Enlight Candle Art
+
+## Page Structure (Desktop View)
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                    PROMO BAR (Black)                        │
+│        "Get 10% off..." (rotating messages)                 │
+├─────────────────────────────────────────────────────────────┤
+│                  NAVIGATION BAR (Black)                      │
+│  ☰ Enlight Candle Art    [Search]    👤  🛒                │
+│  Candles | Forever Flowers | Gift Sets | Decor | etc.      │
+└─────────────────────────────────────────────────────────────┘
+│                                                              │
+│              HERO CAROUSEL (Full Width)                      │
+│         [Large Product Images with Arrows]                   │
+│              (UNTOUCHED - Working Great!)                    │
+│                                                              │
+├─────────────────────────────────────────────────────────────┤
+│                                                              │
+│                  NEW ARRIVALS SECTION                        │
+│              (Light Gray Background)                         │
+│  ┌──────────────────────────────────────────────┐          │
+│  │  New Arrivals                    ← →         │          │
+│  │  Discover our latest handcrafted candles     │          │
+│  ├──────────────────────────────────────────────┤          │
+│  │  [Card 1]  [Card 2]  [Card 3]  [Card 4] →   │          │
+│  │   🟢NEW     🟢NEW                             │          │
+│  │  ₹899      ₹1,249    ₹2,499     ₹899        │          │
+│  └──────────────────────────────────────────────┘          │
+│                                                              │
+├─────────────────────────────────────────────────────────────┤
+│                                                              │
+│                  BESTSELLERS SECTION                         │
+│                (White Background)                            │
+│  ┌──────────────────────────────────────────────┐          │
+│  │  Bestsellers                     ← →         │          │
+│  │  Customer favorites everyone loves           │          │
+│  ├──────────────────────────────────────────────┤          │
+│  │  [Card 1]  [Card 2]  [Card 3]  [Card 4] →   │          │
+│  │  🟠BEST    🟠BEST    🟠BEST                  │          │
+│  │  ₹999     ₹799      ₹1,499      ₹1,349      │          │
+│  └──────────────────────────────────────────────┘          │
+│                                                              │
+├─────────────────────────────────────────────────────────────┤
+│                                                              │
+│              SIGNATURE CANDLES SECTION                       │
+│           (Featured Layout - Light Gray)                     │
+│  ┌──────────────────────────────────────────────┐          │
+│  │         Signature Candles                     │          │
+│  │  Our exclusive signature blends, crafted...   │          │
+│  ├───────────────┬──────────────────────────────┤          │
+│  │               │   [Card 1]    [Card 2]       │          │
+│  │   ┌────────┐  │   🔵SIG       🔵SIG         │          │
+│  │   │        │  │   ₹1,799     ₹1,349          │          │
+│  │   │ LARGE  │  ├──────────────────────────────┤          │
+│  │   │FEATURED│  │   [Card 3]    [Card 4]       │          │
+│  │   │ IMAGE  │  │   🔵SIG       🔵SIG         │          │
+│  │   │        │  │   ₹1,599     ₹999            │          │
+│  │   │Enlight │  ├──────────────────────────────┤          │
+│  │   │Signature│ │   [Card 5]    [Card 6]       │          │
+│  │   │Collection│ │   🔵SIG                     │          │
+│  │   └────────┘  │   ₹1,899                     │          │
+│  │               │                               │          │
+│  └───────────────┴──────────────────────────────┘          │
+│                                                              │
+├─────────────────────────────────────────────────────────────┤
+│                                                              │
+│              PREMIUM SCENTED SECTION                         │
+│                (White Background)                            │
+│  ┌──────────────────────────────────────────────┐          │
+│  │  Premium Scented                 ← →         │          │
+│  │  Luxury fragrances for discerning customers  │          │
+│  ├──────────────────────────────────────────────┤          │
+│  │  [Card 1]  [Card 2]  [Card 3]  [Card 4] →   │          │
+│  │  🟣LIMITED 🟠BEST                             │          │
+│  │  ₹2,999    ₹1,249    ₹1,699     ₹1,899      │          │
+│  └──────────────────────────────────────────────┘          │
+│                                                              │
+├─────────────────────────────────────────────────────────────┤
+│                                                              │
+│                PILLAR CANDLES SECTION                        │
+│              (Light Gray Background)                         │
+│  ┌──────────────────────────────────────────────┐          │
+│  │  Pillar Candles                  ← →         │          │
+│  │  Classic pillars in various scents & sizes   │          │
+│  ├──────────────────────────────────────────────┤          │
+│  │  [Card 1]  [Card 2]  [Card 3]  [Card 4] →   │          │
+│  │  🟢NEW                                        │          │
+│  │  ₹899      ₹799      ₹849       ₹699         │          │
+│  └──────────────────────────────────────────────┘          │
+│                                                              │
+├─────────────────────────────────────────────────────────────┤
+│                                                              │
+│            SHOP BY COLLECTIONS SECTION                       │
+│                (White Background)                            │
+│  ┌──────────────────────────────────────────────┐          │
+│  │        Shop By Collections                    │          │
+│  │  Browse our curated collections for every...  │          │
+│  ├──────────────────────────────────────────────┤          │
+│  │  ┌──────────┐  ┌──────────┐  ┌──────────┐   │          │
+│  │  │ Signature│  │ Premium  │  │  Pillar  │   │          │
+│  │  │ Candles  │  │ Scented  │  │ Candles  │   │          │
+│  │  └──────────┘  └──────────┘  └──────────┘   │          │
+│  │  ┌──────────┐  ┌──────────┐  ┌──────────┐   │          │
+│  │  │   Gift   │  │ Wedding  │  │  Decor   │   │          │
+│  │  │   Sets   │  │Collection│  │Essentials│   │          │
+│  │  └──────────┘  └──────────┘  └──────────┘   │          │
+│  └──────────────────────────────────────────────┘          │
+│                                                              │
+├─────────────────────────────────────────────────────────────┤
+│                      FOOTER                                  │
+│  © 2023 Enlight Art Gallery | Privacy | Terms              │
+└─────────────────────────────────────────────────────────────┘
+```
+
+## Mobile View (< 600px)
+
+```
+┌──────────────────────┐
+│   PROMO BAR          │
+├──────────────────────┤
+│ ☰ Enlight  👤 🛒    │
+│   [Search Bar]       │
+├──────────────────────┤
+│                      │
+│   HERO CAROUSEL      │
+│     (Compact)        │
+│                      │
+├──────────────────────┤
+│   NEW ARRIVALS       │
+│  ┌────────┐          │
+│  │🟢 NEW  │ → Scroll │
+│  │ ₹899   │          │
+│  └────────┘          │
+├──────────────────────┤
+│   BESTSELLERS        │
+│  ┌────────┐          │
+│  │🟠 BEST │ → Scroll │
+│  │ ₹999   │          │
+│  └────────┘          │
+├──────────────────────┤
+│ SIGNATURE CANDLES    │
+│  ┌────────┐          │
+│  │ LARGE  │          │
+│  │ HERO   │          │
+│  └────────┘          │
+│  ┌────────┐          │
+│  │🔵 SIG  │          │
+│  │ ₹1,799 │          │
+│  └────────┘          │
+│  ┌────────┐          │
+│  │🔵 SIG  │          │
+│  │ ₹1,349 │          │
+│  └────────┘          │
+├──────────────────────┤
+│  PREMIUM SCENTED     │
+│  (Horizontal Scroll) │
+├──────────────────────┤
+│  PILLAR CANDLES      │
+│  (Horizontal Scroll) │
+├──────────────────────┤
+│ SHOP BY COLLECTIONS  │
+│  ┌────────┐          │
+│  │Signature│         │
+│  └────────┘          │
+│  ┌────────┐          │
+│  │Premium │          │
+│  └────────┘          │
+│  (2 columns)         │
+├──────────────────────┤
+│      FOOTER          │
+└──────────────────────┘
+```
+
+## Product Card Details
+
+### Horizontal Scroll Card
+```
+┌─────────────────────┐
+│ 🟢 NEW              │ ← Badge (top-left)
+│ 🟠 BESTSELLER       │
+│                     │
+│   [Product Image]   │ ← 240px height
+│                     │
+│ ─────────────────── │
+│ Product Title       │ ← Bold, 1.1rem
+│ Description text... │ ← 2 lines max
+│                     │
+│ ₹899                │ ← Price (primary color)
+│                     │
+│ [Add to Cart] [Buy] │ ← Action buttons
+└─────────────────────┘
+   280-320px width
+```
+
+### Featured Section Card (Smaller)
+```
+┌──────────────┐
+│ 🔵 SIGNATURE │
+│              │
+│  [Product]   │ ← 200px height
+│   [Image]    │
+│              │
+│ ──────────── │
+│ Title        │
+│ Desc...      │
+│ ₹1,799       │
+│ [Cart] [Buy] │
+└──────────────┘
+```
+
+### Category Grid Card
+```
+┌───────────────────┐
+│                   │
+│   [Background]    │
+│    [Image]        │
+│                   │
+│  ───────────────  │ ← Gradient overlay
+│  Category Title   │   (darkens on hover)
+│  Description      │
+│                   │
+└───────────────────┘
+   Hover: Zoom image
+         Darken overlay
+         Lift card
+```
+
+## Badge Colors
+
+```
+🟢 NEW               #4CAF50 (Green)
+🟠 BESTSELLER        #FF9800 (Orange)
+🔴 SALE              #F44336 (Red)
+🟣 LIMITED EDITION   #9C27B0 (Purple)
+🔵 SIGNATURE         #2196F3 (Blue)
+```
+
+## Section Backgrounds
+
+```
+Alternating pattern:
+1. New Arrivals      → #fafafa (Light Gray)
+2. Bestsellers       → #ffffff (White)
+3. Signature         → #ffffff (White)
+4. Premium Scented   → #ffffff (White)
+5. Pillar Candles    → #fafafa (Light Gray)
+6. Collections       → #ffffff (White)
+```
+
+## Interactive Elements
+
+### Horizontal Scroll
+- **Desktop**: Arrow buttons (left/right)
+- **Mobile**: Touch/swipe scroll
+- **All**: Custom scrollbar styling
+
+### Hover Effects
+- **Cards**: Lift (-4px translateY) + shadow increase
+- **Images**: Zoom (scale 1.05)
+- **Category Cards**: Image zoom + overlay darken
+
+### Navigation Arrows (Desktop)
+```
+[ ← ]  [ → ]
+White background
+Gray shadow
+Hover: Light gray bg
+```
+
+## Typography Scale
+
+```
+Section Titles:     2.125rem (34px) - Bold
+Section Subtitles:  1rem (16px) - Regular
+Product Title:      1.1rem (18px) - Semi-bold
+Product Desc:       0.875rem (14px) - Regular
+Price:              1.2rem (19px) - Bold
+Buttons:            0.875rem (14px) - Regular
+```
+
+## Spacing System
+
+```
+Section Padding:    4-6 (theme units)
+Card Gap:           3 (24px)
+Content Padding:    2-4 (16-32px)
+Button Padding:     2-2.5 (16-20px)
+```
+
+---
+
+**Note**: All measurements use Material-UI's spacing system (1 unit = 8px)
