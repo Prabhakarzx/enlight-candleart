@@ -1,7 +1,6 @@
 import React, { useRef } from 'react';
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
-import Grid from '@mui/material/Grid';
 import Card from '@mui/material/Card';
 import CardContent from '@mui/material/CardContent';
 import CardActions from '@mui/material/CardActions';
@@ -102,6 +101,7 @@ const FeaturedSection = ({
                 component="img"
                 src={featuredImage || products[0]?.imageUrl || 'https://images.unsplash.com/photo-1603006905003-be475563bc59?w=800'}
                 alt={featuredTitle || title}
+                loading="lazy"
                 sx={{
                   width: '100%',
                   height: '100%',
@@ -247,6 +247,7 @@ const FeaturedSection = ({
                       component="img"
                       src={product.imageUrl}
                       alt={product.title}
+                      loading="lazy"
                       sx={{
                         width: '100%',
                         height: 250,
@@ -307,4 +308,4 @@ const FeaturedSection = ({
   );
 };
 
-export default FeaturedSection;
+export default React.memo(FeaturedSection);

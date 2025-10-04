@@ -47,4 +47,4 @@ const ProductBadge = ({ badges = [] }) => {
   );
 };
 
-export default ProductBadge;
+export default React.memo(ProductBadge);

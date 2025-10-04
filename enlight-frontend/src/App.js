@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useMemo, Suspense } from 'react';
+import React, { useEffect, useState, useMemo, useCallback, Suspense } from 'react';
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
 import Container from '@mui/material/Container';
@@ -106,47 +106,27 @@ const filteredArtworks = useMemo(() => {
   }, []);
 
   useEffect(() => {
-    // Fetch all artworks
+    // Single fetch for all artworks, then filter client-side for better performance
     fetch('http://localhost:5000/api/artworks')
       .then((res) => res.json())
       .then((data) => {
         setArtworks(data);
+        
+        // Filter data client-side to reduce API calls
+        const thirtyDaysAgo = new Date();
+        thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+        setNewArrivals(data.filter(art => new Date(art.createdAt) >= thirtyDaysAgo).sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)));
+        setBestsellers(data.filter(art => art.badges?.includes('bestseller')));
+        setSignatureProducts(data.filter(art => art.featured === true));
+        setPremiumScented(data.filter(art => art.category === 'premium-scented'));
+        setPillarCandles(data.filter(art => art.category === 'pillar'));
+        
         setLoading(false);
       })
       .catch((err) => {
         setError('Failed to load artworks');
         setLoading(false);
       });
-
-    // Fetch new arrivals
-    fetch('http://localhost:5000/api/artworks/new-arrivals')
-      .then((res) => res.json())
-      .then((data) => setNewArrivals(data))
-      .catch((err) => console.error('Failed to load new arrivals', err));
-
-    // Fetch bestsellers
-    fetch('http://localhost:5000/api/artworks/bestsellers')
-      .then((res) => res.json())
-      .then((data) => setBestsellers(data))
-      .catch((err) => console.error('Failed to load bestsellers', err));
-
-    // Fetch signature/featured products
-    fetch('http://localhost:5000/api/artworks/featured')
-      .then((res) => res.json())
-      .then((data) => setSignatureProducts(data))
-      .catch((err) => console.error('Failed to load signature products', err));
-
-    // Fetch premium scented
-    fetch('http://localhost:5000/api/artworks/category/premium-scented')
-      .then((res) => res.json())
-      .then((data) => setPremiumScented(data))
-      .catch((err) => console.error('Failed to load premium scented', err));
-
-    // Fetch pillar candles
-    fetch('http://localhost:5000/api/artworks/category/pillar')
-      .then((res) => res.json())
-      .then((data) => setPillarCandles(data))
-      .catch((err) => console.error('Failed to load pillar candles', err));
   }, []);
 
 
@@ -167,7 +147,7 @@ const filteredArtworks = useMemo(() => {
     }
   }, [isSearchPage]);
 
-  const performSearch = (queryValue) => {
+  const performSearch = useCallback((queryValue) => {
     const query = queryValue !== undefined ? queryValue : searchQuery;
     const trimmed = query.trim();
 
@@ -185,29 +165,29 @@ const filteredArtworks = useMemo(() => {
     setSearchQuery(query);
     setShowSuggestions(false);
     navigate(`/search?q=${encodeURIComponent(trimmed)}`);
-  };
+  }, [searchQuery, isSearchPage, navigate]);
 
-  const handleSuggestionClick = (title) => {
+  const handleSuggestionClick = useCallback((title) => {
     performSearch(title);
-  };
+  }, [performSearch]);
 
-  const handleSearchInputChange = (e) => {
+  const handleSearchInputChange = useCallback((e) => {
     const value = e.target.value;
     setSearchQuery(value);
     if (!isSearchPage) {
       setShowSuggestions(true);
     }
-  };
+  }, [isSearchPage]);
 
-  const handleKeyDown = (e) => {
+  const handleKeyDown = useCallback((e) => {
     if (e.key === 'Enter') {
       performSearch();
     } else if (e.key === 'Escape') {
       setShowSuggestions(false);
     }
-  };
+  }, [performSearch]);
 
-  const handleAddToCart = (art) => {
+  const handleAddToCart = useCallback((art) => {
     setCart((prev) => {
       const exists = prev.find((item) => item.id === art.id);
       if (exists) {
@@ -217,17 +197,17 @@ const filteredArtworks = useMemo(() => {
     });
     // Open cart drawer immediately
     setCartOpen(true);
-  };
+  }, []);
 
-  const handleRemoveFromCart = (id) => {
+  const handleRemoveFromCart = useCallback((id) => {
     setCart((prev) => prev.filter((item) => item.id !== id));
-  };
+  }, []);
 
-  const handleIncreaseQty = (id) => {
+  const handleIncreaseQty = useCallback((id) => {
     setCart((prev) => prev.map((item) => item.id === id ? { ...item, qty: item.qty + 1 } : item));
-  };
+  }, []);
 
-  const handleDecreaseQty = (id) => {
+  const handleDecreaseQty = useCallback((id) => {
     setCart((prev) => prev.map((item) => {
       if (item.id === id) {
         if (item.qty > 1) return { ...item, qty: item.qty - 1 };
@@ -235,7 +215,7 @@ const filteredArtworks = useMemo(() => {
       }
       return item;
     }).filter(Boolean));
-  };
+  }, []);
 
   const handleBuy = async (art) => {
     const res = await loadRazorpayScript('https://checkout.razorpay.com/v1/checkout.js');

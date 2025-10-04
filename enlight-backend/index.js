@@ -2,8 +2,10 @@ require('dotenv').config();
 const express = require('express');
 const Razorpay = require('razorpay');
 const cors = require('cors');
+const compression = require('compression');
 
 const app = express();
+app.use(compression()); // Enable gzip compression
 app.use(cors());
 app.use(express.json());
 
@@ -448,11 +450,14 @@ const artworks = [
 
 // Get all artworks
 app.get('/api/artworks', (req, res) => {
+  // Cache for 5 minutes
+  res.set('Cache-Control', 'public, max-age=300');
   res.json(artworks);
 });
 
 // Get new arrivals (last 30 days)
 app.get('/api/artworks/new-arrivals', (req, res) => {
+  res.set('Cache-Control', 'public, max-age=300');
   const thirtyDaysAgo = new Date();
   thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
   const newArrivals = artworks

@@ -151,6 +151,7 @@ const HorizontalScrollSection = ({
                 component="img"
                 src={product.imageUrl}
                 alt={product.title}
+                loading="lazy"
                 sx={{
                   width: '100%',
                   height: 240,
@@ -258,4 +259,4 @@ const HorizontalScrollSection = ({
   );
 };
 
-export default HorizontalScrollSection;
+export default React.memo(HorizontalScrollSection);

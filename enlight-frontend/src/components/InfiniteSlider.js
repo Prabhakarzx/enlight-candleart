@@ -97,6 +97,7 @@ const InfiniteSlider = () => {
               component="img"
               src={slide.image}
               alt={slide.caption}
+              loading="lazy"
               sx={{
                 width: '100vw',
                 height: { xs: '60vh', sm: '70vh', md: '100vh' },
@@ -134,4 +135,4 @@ const InfiniteSlider = () => {
   );
 };
 
-export default InfiniteSlider;
+export default React.memo(InfiniteSlider);

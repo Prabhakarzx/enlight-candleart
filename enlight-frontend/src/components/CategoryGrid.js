@@ -116,6 +116,7 @@ const CategoryGrid = ({ title, subtitle }) => {
                   component="img"
                   src={category.image}
                   alt={category.title}
+                  loading="lazy"
                   sx={{
                     width: '100%',
                     height: '100%',
@@ -161,4 +162,4 @@ const CategoryGrid = ({ title, subtitle }) => {
   );
 };
 
-export default CategoryGrid;
+export default React.memo(CategoryGrid);
