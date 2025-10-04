@@ -1,7 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import AppBar from '@mui/material/AppBar';
 import Box from '@mui/material/Box';
-import Toolbar from '@mui/material/Toolbar';
 import Typography from '@mui/material/Typography';
 import Container from '@mui/material/Container';
 import Grid from '@mui/material/Grid';
@@ -19,13 +17,21 @@ import Divider from '@mui/material/Divider';
 import DeleteIcon from '@mui/icons-material/Delete';
 import AddIcon from '@mui/icons-material/Add';
 import RemoveIcon from '@mui/icons-material/Remove';
-import CategoryIcon from '@mui/icons-material/Category';
 import SearchIcon from '@mui/icons-material/Search';
+import MenuIcon from '@mui/icons-material/Menu';
 import PersonOutlineIcon from '@mui/icons-material/PersonOutline';
 import ShoppingCartIcon from '@mui/icons-material/ShoppingCart';
 import CloseIcon from '@mui/icons-material/Close';
 import Badge from '@mui/material/Badge';
 import InfiniteSlider from './components/InfiniteSlider';
+import { Routes, Route, Navigate, useLocation, useNavigate } from 'react-router-dom';
+
+const PROMO_MESSAGES = [
+  'Get 10% off on your first purchase with code TULIKANEW',
+  'Welcome to Enlight store',
+  'Handcrafted candles & art gifts',
+  'Free shipping on orders over ₹999',
+];
 
 function loadRazorpayScript(src) {
   return new Promise((resolve) => {
@@ -38,27 +44,29 @@ function loadRazorpayScript(src) {
 }
 
 function App() {
+  const navigate = useNavigate();
+  const location = useLocation();
+  const isSearchPage = location.pathname.startsWith('/search');
   const [artworks, setArtworks] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [payingId, setPayingId] = useState(null);
   const [cart, setCart] = useState([]);
   const [cartOpen, setCartOpen] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
+  // Search & filtering state
+  const [searchQuery, setSearchQuery] = useState('');
+  const [filteredArtworks, setFilteredArtworks] = useState([]);
+  const [suggestions, setSuggestions] = useState([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
 
   // Flashing/changing promo text
-  const promoMessages = [
-    'Get 10% off on your first purchase with code TULIKANEW',
-    'Welcome to Enlight store',
-    'Handcrafted candles & art gifts',
-    'Free shipping on orders over ₹999',
-  ];
-  const [flashingText, setFlashingText] = useState(promoMessages[0]);
+  const [flashingText, setFlashingText] = useState(PROMO_MESSAGES[0]);
   
   useEffect(() => {
     let idx = 0;
     const interval = setInterval(() => {
-      idx = (idx + 1) % promoMessages.length;
-      setFlashingText(promoMessages[idx]);
+    idx = (idx + 1) % PROMO_MESSAGES.length;
+    setFlashingText(PROMO_MESSAGES[idx]);
     }, 2000);
     return () => clearInterval(interval);
   }, []);
@@ -69,12 +77,99 @@ function App() {
       .then((data) => {
         setArtworks(data);
         setLoading(false);
+        setFilteredArtworks(data); // initialize filtered list
       })
       .catch((err) => {
         setError('Failed to load artworks');
         setLoading(false);
       });
   }, []);
+
+  // Derived suggestions when typing on home view
+  useEffect(() => {
+    if (!searchQuery || isSearchPage) {
+      setSuggestions([]);
+      return;
+    }
+    const lower = searchQuery.toLowerCase();
+    const matches = artworks
+      .filter((a) => a.title && a.title.toLowerCase().includes(lower))
+      .slice(0, 6);
+    setSuggestions(matches);
+  }, [searchQuery, artworks, isSearchPage]);
+
+  // Sync filtered artworks with route/query params
+  useEffect(() => {
+    if (isSearchPage) {
+      const params = new URLSearchParams(location.search);
+      const qParam = params.get('q') || '';
+      setSearchQuery((prev) => (prev === qParam ? prev : qParam));
+
+      if (!qParam.trim()) {
+        setFilteredArtworks([]);
+      } else {
+        const lowered = qParam.trim().toLowerCase();
+        setFilteredArtworks(
+          artworks.filter(
+            (a) =>
+              (a.title && a.title.toLowerCase().includes(lowered)) ||
+              (a.description && a.description.toLowerCase().includes(lowered))
+          )
+        );
+      }
+      setShowSuggestions(false);
+    } else {
+      setFilteredArtworks(artworks);
+    }
+  }, [isSearchPage, location.search, artworks]);
+
+  useEffect(() => {
+    if (isSearchPage) {
+      setShowSuggestions(false);
+    }
+  }, [isSearchPage]);
+
+  const performSearch = (queryValue) => {
+    const query = queryValue !== undefined ? queryValue : searchQuery;
+    const trimmed = query.trim();
+
+    if (!trimmed) {
+      if (queryValue !== undefined) {
+        setSearchQuery(queryValue);
+      }
+      if (isSearchPage) {
+        navigate('/');
+      } else {
+        setFilteredArtworks(artworks);
+      }
+      setShowSuggestions(false);
+      return;
+    }
+
+    setSearchQuery(query);
+    setShowSuggestions(false);
+    navigate(`/search?q=${encodeURIComponent(trimmed)}`);
+  };
+
+  const handleSuggestionClick = (title) => {
+    performSearch(title);
+  };
+
+  const handleSearchInputChange = (e) => {
+    const value = e.target.value;
+    setSearchQuery(value);
+    if (!isSearchPage) {
+      setShowSuggestions(true);
+    }
+  };
+
+  const handleKeyDown = (e) => {
+    if (e.key === 'Enter') {
+      performSearch();
+    } else if (e.key === 'Escape') {
+      setShowSuggestions(false);
+    }
+  };
 
   const handleAddToCart = (art) => {
     setCart((prev) => {
@@ -107,11 +202,9 @@ function App() {
   };
 
   const handleBuy = async (art) => {
-    setPayingId(art.id);
     const res = await loadRazorpayScript('https://checkout.razorpay.com/v1/checkout.js');
     if (!res) {
       alert('Failed to load Razorpay SDK.');
-      setPayingId(null);
       return;
     }
 
@@ -125,13 +218,11 @@ function App() {
       order = await orderRes.json();
     } catch (err) {
       alert('Failed to connect to backend.');
-      setPayingId(null);
       return;
     }
 
     if (!order.id) {
       alert('Failed to create order. ' + (order.error || ''));
-      setPayingId(null);
       return;
     }
 
@@ -157,7 +248,6 @@ function App() {
 
     const rzp = new window.Razorpay(options);
     rzp.open();
-    setPayingId(null);
   };
 
   const handleCheckout = async () => {
@@ -215,8 +305,270 @@ function App() {
     rzp.open();
   };
 
+  const renderProductGrid = (items, heading, emptyMessage, subtitle) => (
+    <Container maxWidth="lg" sx={{ mb: 4 }}>
+      <Typography variant="h4" fontWeight={700} align="center" sx={{ mb: subtitle ? 2 : 4 }}>
+        {heading}
+      </Typography>
+      {subtitle && (
+        <Typography
+          variant="body2"
+          color="text.secondary"
+          align="center"
+          sx={{ mb: 3 }}
+        >
+          {subtitle}
+        </Typography>
+      )}
+      <Grid container spacing={4}>
+        {loading && (
+          <Grid item xs={12} sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
+            <CircularProgress />
+          </Grid>
+        )}
+        {error && (
+          <Grid item xs={12}>
+            <Typography variant="body1" color="error" align="center">
+              {error}
+            </Typography>
+          </Grid>
+        )}
+        {!loading && !error && items.length === 0 && (
+          <Grid item xs={12}>
+            <Typography variant="body1" align="center" sx={{ py: 4 }}>
+              {emptyMessage}
+            </Typography>
+          </Grid>
+        )}
+        {!loading && !error && items.map((art) => (
+          <Grid item xs={12} sm={6} md={4} key={art.id}>
+            <Card sx={{ borderRadius: 4, boxShadow: 3, overflow: 'hidden' }}>
+              <Box
+                component="img"
+                src={art.imageUrl}
+                alt={art.title}
+                sx={{
+                  width: '100%',
+                  height: 200,
+                  objectFit: 'cover',
+                  transition: 'transform 0.3s',
+                  '&:hover': {
+                    transform: 'scale(1.05)',
+                  },
+                }}
+              />
+              <CardContent>
+                <Typography variant="h6" fontWeight={600} gutterBottom>
+                  {art.title}
+                </Typography>
+                <Typography variant="body2" color="text.secondary" paragraph>
+                  {art.description}
+                </Typography>
+                <Typography variant="h6" fontWeight={700} color="primary">
+                  ₹{(art.price / 100).toLocaleString('en-IN')}
+                </Typography>
+              </CardContent>
+              <CardActions sx={{ justifyContent: 'space-between', p: 2 }}>
+                <Button
+                  variant="contained"
+                  color="primary"
+                  size="small"
+                  onClick={() => handleAddToCart(art)}
+                  sx={{ borderRadius: 20, px: 3, py: 1 }}
+                >
+                  Add to Cart
+                </Button>
+                <Button
+                  variant="outlined"
+                  color="primary"
+                  size="small"
+                  onClick={() => handleBuy(art)}
+                  sx={{ borderRadius: 20, px: 3, py: 1 }}
+                >
+                  Buy Now
+                </Button>
+              </CardActions>
+            </Card>
+          </Grid>
+        ))}
+      </Grid>
+    </Container>
+  );
+
+  const trimmedSearch = searchQuery.trim();
+
   return (
     <>
+      {/* Mobile Menu Drawer */}
+      <Drawer 
+        anchor="left" 
+        open={menuOpen} 
+        onClose={() => setMenuOpen(false)}
+        transitionDuration={250}
+        PaperProps={{
+          sx: {
+            width: { xs: '75%', sm: 300 },
+            bgcolor: '#111',
+            color: '#fff',
+          }
+        }}
+      >
+        <Box sx={{ 
+          height: '100%', 
+          display: 'flex', 
+          flexDirection: 'column',
+          p: 0
+        }}>
+          {/* Menu Header */}
+          <Box sx={{ 
+            p: 3, 
+            display: 'flex', 
+            alignItems: 'center', 
+            justifyContent: 'space-between',
+            borderBottom: '1px solid rgba(255,255,255,0.1)'
+          }}>
+            <Typography sx={{ 
+              fontSize: '1.2rem',
+              fontWeight: 700,
+              color: '#fff'
+            }}>
+              Menu
+            </Typography>
+            <IconButton 
+              onClick={() => setMenuOpen(false)}
+              sx={{ 
+                p: 1,
+                color: '#fff',
+                '&:hover': { 
+                  bgcolor: 'rgba(255,255,255,0.1)'
+                }
+              }}
+            >
+              <CloseIcon sx={{ fontSize: 20 }} />
+            </IconButton>
+          </Box>
+          
+          {/* Menu Items */}
+          <List sx={{ pt: 2 }}>
+            <ListItem 
+              button 
+              onClick={() => setMenuOpen(false)}
+              sx={{ 
+                py: 2,
+                px: 3,
+                '&:hover': { bgcolor: 'rgba(255,255,255,0.1)' },
+                transition: 'all 0.2s',
+                cursor: 'pointer'
+              }}
+            >
+              <ListItemText 
+                primary="Candles" 
+                primaryTypographyProps={{
+                  fontSize: '1rem',
+                  fontWeight: 500
+                }}
+              />
+            </ListItem>
+            <ListItem 
+              button 
+              onClick={() => setMenuOpen(false)}
+              sx={{ 
+                py: 2,
+                px: 3,
+                '&:hover': { bgcolor: 'rgba(255,255,255,0.1)' },
+                transition: 'all 0.2s',
+                cursor: 'pointer'
+              }}
+            >
+              <ListItemText 
+                primary="Forever Flowers" 
+                primaryTypographyProps={{
+                  fontSize: '1rem',
+                  fontWeight: 500
+                }}
+              />
+            </ListItem>
+            <ListItem 
+              button 
+              onClick={() => setMenuOpen(false)}
+              sx={{ 
+                py: 2,
+                px: 3,
+                '&:hover': { bgcolor: 'rgba(255,255,255,0.1)' },
+                transition: 'all 0.2s',
+                cursor: 'pointer'
+              }}
+            >
+              <ListItemText 
+                primary="Gift Sets" 
+                primaryTypographyProps={{
+                  fontSize: '1rem',
+                  fontWeight: 500
+                }}
+              />
+            </ListItem>
+            <ListItem 
+              button 
+              onClick={() => setMenuOpen(false)}
+              sx={{ 
+                py: 2,
+                px: 3,
+                '&:hover': { bgcolor: 'rgba(255,255,255,0.1)' },
+                transition: 'all 0.2s',
+                cursor: 'pointer'
+              }}
+            >
+              <ListItemText 
+                primary="Decor Essentials" 
+                primaryTypographyProps={{
+                  fontSize: '1rem',
+                  fontWeight: 500
+                }}
+              />
+            </ListItem>
+            <Divider sx={{ bgcolor: 'rgba(255,255,255,0.1)', my: 2 }} />
+            <ListItem 
+              button 
+              onClick={() => setMenuOpen(false)}
+              sx={{ 
+                py: 2,
+                px: 3,
+                '&:hover': { bgcolor: 'rgba(255,255,255,0.1)' },
+                transition: 'all 0.2s',
+                cursor: 'pointer'
+              }}
+            >
+              <ListItemText 
+                primary="Our Story" 
+                primaryTypographyProps={{
+                  fontSize: '1rem',
+                  fontWeight: 500
+                }}
+              />
+            </ListItem>
+            <ListItem 
+              button 
+              onClick={() => setMenuOpen(false)}
+              sx={{ 
+                py: 2,
+                px: 3,
+                '&:hover': { bgcolor: 'rgba(255,255,255,0.1)' },
+                transition: 'all 0.2s',
+                cursor: 'pointer'
+              }}
+            >
+              <ListItemText 
+                primary="Contact Us" 
+                primaryTypographyProps={{
+                  fontSize: '1rem',
+                  fontWeight: 500
+                }}
+              />
+            </ListItem>
+          </List>
+        </Box>
+      </Drawer>
+
       {/* Cart Drawer */}
       <Drawer 
         anchor="right" 
@@ -469,15 +821,17 @@ function App() {
         </Box>
       </Drawer>
 
-      {/* Promo Bar and Search Section */}
-      <Box sx={{ width: '100%', bgcolor: '#111', color: '#fff', py: 2, px: { xs: 2, md: 4 }, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+  {/* Promo Bar and Search Section */}
+  <Box sx={{ width: '100%', bgcolor: '#111', color: '#fff', py: { xs: 1.5, md: 2 }, px: { xs: 1, md: 4 }, display: 'flex', flexDirection: 'column', alignItems: 'center', overflowX: 'hidden', boxSizing: 'border-box' }}>
         {/* Flashing Promo */}
         <Typography 
           sx={{ 
-            fontSize: 15, 
+            fontSize: { xs: 13, md: 15 },
             fontWeight: 500, 
-            minHeight: 24, 
-            mb: 2,
+            minHeight: { xs: 20, md: 24 },
+            mb: { xs: 1.5, md: 2 },
+            textAlign: 'center',
+            px: { xs: 1, md: 0 },
             animation: 'fadeInOut 0.8s ease-in-out',
             '@keyframes fadeInOut': {
               '0%': { opacity: 0, transform: 'translateY(-5px)' },
@@ -491,30 +845,199 @@ function App() {
         <Box sx={{ 
           width: '100%', 
           maxWidth: 1400, 
-          display: 'flex', 
-          alignItems: 'center', 
-          justifyContent: 'space-between',
-          gap: { xs: 2, md: 3 }
+          display: 'flex',
+          flexDirection: { xs: 'column', md: 'row' },
+          alignItems: { xs: 'stretch', md: 'center' },
+          justifyContent: { md: 'space-between' },
+          gap: { xs: 1.5, md: 3 }
         }}>
+          {/* Mobile: Top Row - Menu Icon, Site Name, User Icons */}
+          <Box sx={{ 
+            display: { xs: 'flex', md: 'none' },
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            width: '100%',
+            gap: 1,
+            overflow: 'hidden'
+          }}>
+            {/* Left: Menu Icon + Site Name */}
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, flex: 1, minWidth: 0 }}>
+              <IconButton 
+                onClick={() => setMenuOpen(true)}
+                sx={{ 
+                  color: '#fff',
+                  p: 0.25,
+                  flexShrink: 0,
+                  '&:hover': { bgcolor: 'rgba(255,255,255,0.1)' }
+                }}
+              >
+                <MenuIcon sx={{ fontSize: 22 }} />
+              </IconButton>
+              
+              <Typography sx={{ 
+                fontWeight: 700, 
+                fontSize: 15,
+                letterSpacing: 0.3, 
+                color: '#fff',
+                whiteSpace: 'nowrap',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis'
+              }}>
+                Enlight Candle Art
+              </Typography>
+            </Box>
+            
+            {/* Right: User Icons */}
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.25, flexShrink: 0 }}>
+              <IconButton sx={{ color: '#fff', p: 0.25, '&:hover': { bgcolor: 'rgba(255,255,255,0.1)' } }}>
+                <PersonOutlineIcon sx={{ fontSize: 20 }} />
+              </IconButton>
+              <IconButton 
+                onClick={() => setCartOpen(true)} 
+                sx={{ color: '#fff', p: 0.25, '&:hover': { bgcolor: 'rgba(255,255,255,0.1)' } }}
+              >
+                <Badge 
+                  badgeContent={cart.length} 
+                  color="primary"
+                  sx={{ '& .MuiBadge-badge': { bgcolor: '#fff', color: '#111', fontSize: 9, minWidth: 16, height: 16 } }}
+                >
+                  <ShoppingCartIcon sx={{ fontSize: 20 }} />
+                </Badge>
+              </IconButton>
+            </Box>
+          </Box>
+
+          {/* Mobile: Second Row - Search */}
+          <Box sx={{ 
+            display: { xs: 'flex', md: 'none' },
+            width: '100%'
+          }}>
+            <Box 
+              sx={{ 
+                width: '100%', 
+                position: 'relative',
+                '& input:focus + svg': {
+                  color: '#fff',
+                }
+              }}
+            >
+              <input
+                type="text"
+                placeholder="Search for products..."
+                style={{
+                  width: '100%',
+                  padding: '8px 36px 8px 12px',
+                  borderRadius: 6,
+                  border: '1px solid rgba(255,255,255,0.3)',
+                  background: 'rgba(255,255,255,0.05)',
+                  color: '#fff',
+                  fontSize: 14,
+                  outline: 'none',
+                  transition: 'all 0.3s ease',
+                  boxSizing: 'border-box'
+                }}
+                value={searchQuery}
+                onChange={handleSearchInputChange}
+                onKeyDown={handleKeyDown}
+                onFocus={(e) => {
+                  e.target.style.border = '1px solid rgba(255,255,255,0.8)';
+                  e.target.style.background = 'rgba(255,255,255,0.12)';
+                  e.target.style.boxShadow = '0 0 0 3px rgba(255,255,255,0.15)';
+                  if (!isSearchPage) {
+                    setShowSuggestions(true);
+                  }
+                }}
+                onBlur={(e) => {
+                  e.target.style.border = '1px solid rgba(255,255,255,0.3)';
+                  e.target.style.background = 'rgba(255,255,255,0.05)';
+                  e.target.style.boxShadow = 'none';
+                  // Delay hiding to allow click
+                  setTimeout(() => setShowSuggestions(false), 180);
+                }}
+              />
+              <SearchIcon 
+                onClick={performSearch}
+                sx={{ 
+                  position: 'absolute', 
+                  right: 12, 
+                  top: '50%', 
+                  transform: 'translateY(-50%)', 
+                  color: 'rgba(255,255,255,0.6)',
+                  transition: 'color 0.3s ease',
+                  cursor: 'pointer',
+                  '&:hover': { color: '#fff' }
+                }} 
+              />
+              {showSuggestions && !isSearchPage && suggestions.length > 0 && (
+                <Box sx={{
+                  position: 'absolute',
+                  top: '100%',
+                  left: 0,
+                  width: '100%',
+                  bgcolor: '#1c1c1c',
+                  border: '1px solid rgba(255,255,255,0.15)',
+                  borderRadius: '6px',
+                  mt: 0.5,
+                  zIndex: 30,
+                  maxHeight: 260,
+                  overflowY: 'auto',
+                  boxShadow: '0 4px 16px rgba(0,0,0,0.4)'
+                }}>
+                  {suggestions.map(s => (
+                    <Box
+                      key={s.id}
+                      onPointerDown={(event) => {
+                        event.preventDefault();
+                        handleSuggestionClick(s.title);
+                      }}
+                      sx={{
+                        px: 1.5,
+                        py: 1,
+                        fontSize: 13,
+                        color: '#eee',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        gap: 1,
+                        '&:hover': { bgcolor: 'rgba(255,255,255,0.08)' }
+                      }}
+                    >
+                      <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1 }}>
+                        {s.title}
+                      </span>
+                      <span style={{ opacity: 0.5, fontSize: 11 }}>
+                        ₹{(s.price/100).toLocaleString('en-IN')}
+                      </span>
+                    </Box>
+                  ))}
+                </Box>
+              )}
+            </Box>
+          </Box>
+
+          {/* Desktop Layout */}
           {/* Left: Site Name */}
           <Typography sx={{ 
+            display: { xs: 'none', md: 'block' },
             fontWeight: 700, 
-            fontSize: { xs: 18, md: 22 }, 
+            fontSize: 22,
             letterSpacing: 1, 
             color: '#fff', 
-            flex: '0 0 auto', 
+            flex: '0 0 auto',
             whiteSpace: 'nowrap',
-            minWidth: { xs: '140px', md: '200px' }
+            minWidth: '200px'
           }}>
             Enlight Candle Art
           </Typography>
-          {/* Center: Search */}
+          
+          {/* Center: Search (Desktop) */}
           <Box sx={{ 
-            flex: '1 1 auto', 
-            display: 'flex', 
+            display: { xs: 'none', md: 'flex' },
+            flex: '1 1 auto',
             justifyContent: 'center', 
             maxWidth: '500px',
-            px: { xs: 1, md: 2 }
+            px: 2
           }}>
             <Box 
               sx={{ 
@@ -538,37 +1061,94 @@ function App() {
                   fontSize: 14,
                   outline: 'none',
                   transition: 'all 0.3s ease',
+                  boxSizing: 'border-box'
                 }}
+                value={searchQuery}
+                onChange={handleSearchInputChange}
+                onKeyDown={handleKeyDown}
                 onFocus={(e) => {
                   e.target.style.border = '1px solid rgba(255,255,255,0.8)';
                   e.target.style.background = 'rgba(255,255,255,0.12)';
                   e.target.style.boxShadow = '0 0 0 3px rgba(255,255,255,0.15)';
+                  if (!isSearchPage) {
+                    setShowSuggestions(true);
+                  }
                 }}
                 onBlur={(e) => {
                   e.target.style.border = '1px solid rgba(255,255,255,0.3)';
                   e.target.style.background = 'rgba(255,255,255,0.05)';
                   e.target.style.boxShadow = 'none';
+                  setTimeout(() => setShowSuggestions(false), 180);
                 }}
               />
               <SearchIcon 
+                onClick={performSearch}
                 sx={{ 
                   position: 'absolute', 
                   right: 12, 
                   top: '50%', 
                   transform: 'translateY(-50%)', 
-                  color: 'rgba(255,255,255,0.5)',
+                  color: 'rgba(255,255,255,0.6)',
                   transition: 'color 0.3s ease',
+                  cursor: 'pointer',
+                  '&:hover': { color: '#fff' }
                 }} 
               />
+              {showSuggestions && !isSearchPage && suggestions.length > 0 && (
+                <Box sx={{
+                  position: 'absolute',
+                  top: '100%',
+                  left: 0,
+                  width: '100%',
+                  bgcolor: '#1c1c1c',
+                  border: '1px solid rgba(255,255,255,0.15)',
+                  borderRadius: '6px',
+                  mt: 0.5,
+                  zIndex: 30,
+                  maxHeight: 260,
+                  overflowY: 'auto',
+                  boxShadow: '0 4px 16px rgba(0,0,0,0.4)'
+                }}>
+                  {suggestions.map(s => (
+                    <Box
+                      key={s.id}
+                      onPointerDown={(event) => {
+                        event.preventDefault();
+                        handleSuggestionClick(s.title);
+                      }}
+                      sx={{
+                        px: 1.5,
+                        py: 1,
+                        fontSize: 13,
+                        color: '#eee',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        gap: 1,
+                        '&:hover': { bgcolor: 'rgba(255,255,255,0.08)' }
+                      }}
+                    >
+                      <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1 }}>
+                        {s.title}
+                      </span>
+                      <span style={{ opacity: 0.5, fontSize: 11 }}>
+                        ₹{(s.price/100).toLocaleString('en-IN')}
+                      </span>
+                    </Box>
+                  ))}
+                </Box>
+              )}
             </Box>
           </Box>
-          {/* Right: Profile & Cart */}
+          
+          {/* Right: Profile & Cart (Desktop) */}
           <Box sx={{ 
-            display: 'flex', 
+            display: { xs: 'none', md: 'flex' },
             alignItems: 'center', 
-            gap: { xs: 1, md: 2 }, 
+            gap: 2, 
             flex: '0 0 auto',
-            minWidth: { xs: '80px', md: '100px' },
+            minWidth: '100px',
             justifyContent: 'flex-end'
           }}>
             <IconButton sx={{ color: '#fff', '&:hover': { bgcolor: 'rgba(255,255,255,0.1)' } }}>
@@ -588,8 +1168,15 @@ function App() {
             </IconButton>
           </Box>
         </Box>
-        {/* Bottom row: Categories */}
-        <Box sx={{ width: '100%', maxWidth: 900, display: 'flex', justifyContent: 'center', gap: 4, mt: 1 }}>
+        {/* Bottom row: Categories - Desktop Only */}
+        <Box sx={{ 
+          width: '100%', 
+          maxWidth: 900, 
+          display: { xs: 'none', md: 'flex' },
+          justifyContent: 'center', 
+          gap: 4, 
+          mt: 1 
+        }}>
           <Typography sx={{ color: '#fff', fontSize: 16, mx: 2, cursor: 'pointer', fontWeight: 500 }}>Candles</Typography>
           <Typography sx={{ color: '#fff', fontSize: 16, mx: 2, cursor: 'pointer', fontWeight: 500 }}>Forever Flowers</Typography>
           <Typography sx={{ color: '#fff', fontSize: 16, mx: 2, cursor: 'pointer', fontWeight: 500 }}>Gift Sets</Typography>
@@ -599,87 +1186,30 @@ function App() {
         </Box>
       </Box>
 
-      {/* Hero Slider */}
-      <InfiniteSlider />
+      {!isSearchPage && <InfiniteSlider />}
 
-      {/* Artworks/Grid Section */}
-      <Container maxWidth="lg" sx={{ mb: 4 }}>
-        <Typography variant="h4" fontWeight={700} align="center" sx={{ mb: 4 }}>
-          Featured Candle Art
-        </Typography>
-        <Grid container spacing={4}>
-          {loading && (
-            <Grid item xs={12} sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
-              <CircularProgress />
-            </Grid>
+      <Routes>
+        <Route
+          path="/"
+          element={renderProductGrid(
+            artworks,
+            'Featured Candle Art',
+            'No artworks found.'
           )}
-          {error && (
-            <Grid item xs={12}>
-              <Typography variant="body1" color="error" align="center">
-                {error}
-              </Typography>
-            </Grid>
+        />
+        <Route
+          path="/search"
+          element={renderProductGrid(
+            filteredArtworks,
+            trimmedSearch ? `Results for "${trimmedSearch}"` : 'Search Results',
+            trimmedSearch ? 'No products match your search.' : 'Enter a product name above to start searching.',
+            !loading && !error && trimmedSearch
+              ? `${filteredArtworks.length} result${filteredArtworks.length === 1 ? '' : 's'} for "${trimmedSearch}"`
+              : undefined
           )}
-          {!loading && !error && artworks.length === 0 && (
-            <Grid item xs={12}>
-              <Typography variant="body1" align="center" sx={{ py: 4 }}>
-                No artworks found.
-              </Typography>
-            </Grid>
-          )}
-          {!loading && !error && artworks.map((art) => (
-            <Grid item xs={12} sm={6} md={4} key={art.id}>
-              <Card sx={{ borderRadius: 4, boxShadow: 3, overflow: 'hidden' }}>
-                <Box
-                  component="img"
-                  src={art.imageUrl}
-                  alt={art.title}
-                  sx={{
-                    width: '100%',
-                    height: 200,
-                    objectFit: 'cover',
-                    transition: 'transform 0.3s',
-                    '&:hover': {
-                      transform: 'scale(1.05)',
-                    },
-                  }}
-                />
-                <CardContent>
-                  <Typography variant="h6" fontWeight={600} gutterBottom>
-                    {art.title}
-                  </Typography>
-                  <Typography variant="body2" color="text.secondary" paragraph>
-                    {art.description}
-                  </Typography>
-                  <Typography variant="h6" fontWeight={700} color="primary">
-                    ₹{(art.price / 100).toLocaleString('en-IN')}
-                  </Typography>
-                </CardContent>
-                <CardActions sx={{ justifyContent: 'space-between', p: 2 }}>
-                  <Button
-                    variant="contained"
-                    color="primary"
-                    size="small"
-                    onClick={() => handleAddToCart(art)}
-                    sx={{ borderRadius: 20, px: 3, py: 1 }}
-                  >
-                    Add to Cart
-                  </Button>
-                  <Button
-                    variant="outlined"
-                    color="primary"
-                    size="small"
-                    onClick={() => handleBuy(art)}
-                    sx={{ borderRadius: 20, px: 3, py: 1 }}
-                  >
-                    Buy Now
-                  </Button>
-                </CardActions>
-              </Card>
-            </Grid>
-          ))}
-        </Grid>
-      </Container>
+        />
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
 
       {/* Footer */}
       <Box sx={{ py: 4, bgcolor: '#f7f7f7', borderTop: '1px solid #e0e0e0' }}>

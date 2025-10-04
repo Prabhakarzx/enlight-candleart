@@ -57,16 +57,18 @@ function PrevArrow(props) {
       sx={{
         position: 'absolute',
         top: '50%',
-        left: 24,
+        left: { xs: 8, sm: 16, md: 24 },
         zIndex: 2,
-        bgcolor: 'rgba(255,255,255,0.7)',
+        bgcolor: 'rgba(255,255,255,0.9)',
         boxShadow: 2,
         transform: 'translateY(-50%)',
+        width: { xs: 36, md: 48 },
+        height: { xs: 36, md: 48 },
         '&:hover': { bgcolor: '#fbeee6' },
       }}
       aria-label="previous slide"
     >
-      <ArrowBackIosNewIcon fontSize="medium" />
+      <ArrowBackIosNewIcon sx={{ fontSize: { xs: 18, md: 24 } }} />
     </IconButton>
   );
 }
@@ -87,17 +89,17 @@ const InfiniteSlider = () => {
   };
 
   return (
-    <Box sx={{ width: '100vw', height: '100vh', position: 'relative', left: '50%', right: '50%', ml: '-50vw', mr: '-50vw', overflow: 'hidden' }}>
+    <Box sx={{ width: '100vw', height: { xs: '60vh', sm: '70vh', md: '100vh' }, position: 'relative', left: '50%', right: '50%', ml: '-50vw', mr: '-50vw', overflow: 'hidden' }}>
       <Slider {...settings}>
         {slides.map((slide, idx) => (
-          <Box key={idx} sx={{ position: 'relative', width: '100vw', height: '100vh' }}>
+          <Box key={idx} sx={{ position: 'relative', width: '100vw', height: { xs: '60vh', sm: '70vh', md: '100vh' } }}>
             <Box
               component="img"
               src={slide.image}
               alt={slide.caption}
               sx={{
                 width: '100vw',
-                height: '100vh',
+                height: { xs: '60vh', sm: '70vh', md: '100vh' },
                 objectFit: 'cover',
                 display: 'block',
               }}
@@ -106,19 +108,21 @@ const InfiniteSlider = () => {
               variant="h4"
               sx={{
                 position: 'absolute',
-                bottom: { xs: '10vh', md: '15vh' },
-                left: { xs: '5vw', md: '10vw' },
+                bottom: { xs: '8vh', md: '15vh' },
+                left: { xs: '4vw', md: '10vw' },
+                right: { xs: '4vw', md: 'auto' },
                 color: '#fff',
                 bgcolor: 'rgba(0,0,0,0.35)',
-                px: { xs: 3, md: 6 },
-                py: { xs: 2, md: 3 },
-                borderRadius: 3,
+                px: { xs: 2, sm: 3, md: 6 },
+                py: { xs: 1.5, sm: 2, md: 3 },
+                borderRadius: { xs: 2, md: 3 },
                 fontWeight: 700,
-                letterSpacing: 1.2,
-                fontSize: { xs: 24, md: 48 },
+                letterSpacing: { xs: 0.5, md: 1.2 },
+                fontSize: { xs: '1rem', sm: '1.5rem', md: '3rem' },
                 boxShadow: 3,
                 backdropFilter: 'blur(8px)',
                 textTransform: 'uppercase',
+                textAlign: { xs: 'center', md: 'left' },
               }}
             >
               {slide.caption}
