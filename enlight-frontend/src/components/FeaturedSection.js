@@ -60,26 +60,39 @@ const FeaturedSection = ({
           >
             {title}
           </Typography>
-          {subtitle && (
-            <Typography 
-              variant="body1" 
-              color="text.secondary"
-              sx={{ fontSize: '1rem' }}
-            >
-              {subtitle}
-            </Typography>
-          )}
+          <Box 
+            component="a"
+            href="#"
+            sx={{ 
+              fontSize: '0.9rem',
+              color: 'primary.main',
+              textDecoration: 'underline',
+              '&:hover': { color: 'primary.dark' }
+            }}
+          >
+            View all
+          </Box>
         </Box>
 
-        {/* Featured Layout: Large Image Left + Products Grid Right */}
-        <Grid container spacing={4}>
+        {/* Featured Layout: Large Image Left + Horizontal Slider Right */}
+        <Box sx={{ 
+          display: 'flex', 
+          flexDirection: { xs: 'column', md: 'row' },
+          gap: 3,
+          alignItems: 'stretch'
+        }}>
           {/* Left: Large Featured Image */}
-          <Grid item xs={12} md={5}>
+          <Box
+            sx={{
+              width: { xs: '100%', md: '40%', lg: '37.5%' },
+              flexShrink: 0
+            }}
+          >
             <Box
               sx={{
                 position: 'relative',
-                height: { xs: 400, md: '100%' },
-                minHeight: { md: 600 },
+                width: '100%',
+                height: { xs: 400, md: 500, lg: 550 },
                 borderRadius: 4,
                 overflow: 'hidden',
                 boxShadow: 3,
@@ -87,7 +100,7 @@ const FeaturedSection = ({
             >
               <Box
                 component="img"
-                src={featuredImage || 'https://images.unsplash.com/photo-1603006905003-be475563bc59?w=800'}
+                src={featuredImage || products[0]?.imageUrl || 'https://images.unsplash.com/photo-1603006905003-be475563bc59?w=800'}
                 alt={featuredTitle || title}
                 sx={{
                   width: '100%',
@@ -104,40 +117,122 @@ const FeaturedSection = ({
                   right: 0,
                   background: 'linear-gradient(to top, rgba(0,0,0,0.8), transparent)',
                   color: 'white',
-                  p: 4,
+                  p: 3,
                 }}
               >
                 <Typography 
-                  variant="h4" 
+                  variant="h5" 
                   fontWeight={700}
-                  sx={{ mb: 1 }}
+                  sx={{ mb: 1, fontSize: { xs: '1.25rem', md: '1.5rem' } }}
                 >
-                  {featuredTitle || 'Our Signature Collection'}
+                  {featuredTitle || 'Most Loved'}
                 </Typography>
                 <Typography 
-                  variant="body1"
-                  sx={{ opacity: 0.95 }}
+                  variant="h3" 
+                  fontWeight={700}
+                  sx={{ 
+                    mb: 1,
+                    fontSize: { xs: '1.75rem', md: '2.5rem' },
+                    color: '#FFD700'
+                  }}
                 >
-                  {featuredDescription || 'Handcrafted with love, designed to inspire'}
+                  CANDLES
                 </Typography>
               </Box>
             </Box>
-          </Grid>
+          </Box>
 
-          {/* Right: Products Grid */}
-          <Grid item xs={12} md={7}>
-            <Grid container spacing={3}>
-              {products.slice(0, 6).map((product) => (
-                <Grid item xs={12} sm={6} key={product.id}>
+          {/* Right: Horizontal Slider */}
+          <Box
+            sx={{
+              width: { xs: '100%', md: '60%', lg: '62.5%' },
+              flexGrow: 1
+            }}
+          >
+            <Box sx={{ 
+              position: 'relative', 
+              width: '100%',
+              minHeight: { xs: 'auto', md: 500, lg: 550 },
+              display: 'flex',
+              alignItems: 'center',
+              py: { xs: 0, md: 0 }
+            }}>
+              {/* Navigation Arrows */}
+              <IconButton
+                onClick={() => scroll('left')}
+                sx={{
+                  position: 'absolute',
+                  left: { md: -15, lg: -20 },
+                  top: '50%',
+                  transform: 'translateY(-50%)',
+                  zIndex: 10,
+                  bgcolor: 'rgba(255,255,255,0.95)',
+                  boxShadow: 3,
+                  display: { xs: 'none', md: 'flex' },
+                  '&:hover': { bgcolor: 'white', boxShadow: 4 },
+                }}
+              >
+                <ArrowBackIosNewIcon fontSize="small" />
+              </IconButton>
+              <IconButton
+                onClick={() => scroll('right')}
+                sx={{
+                  position: 'absolute',
+                  right: { md: -15, lg: -20 },
+                  top: '50%',
+                  transform: 'translateY(-50%)',
+                  zIndex: 10,
+                  bgcolor: 'rgba(255,255,255,0.95)',
+                  boxShadow: 3,
+                  display: { xs: 'none', md: 'flex' },
+                  '&:hover': { bgcolor: 'white', boxShadow: 4 },
+                }}
+              >
+                <ArrowForwardIosIcon fontSize="small" />
+              </IconButton>
+
+              {/* Scrollable Container */}
+              <Box
+                ref={scrollContainerRef}
+                sx={{
+                  display: 'flex',
+                  gap: 3,
+                  overflowX: 'auto',
+                  overflowY: 'hidden',
+                  scrollBehavior: 'smooth',
+                  width: '100%',
+                  pb: 2,
+                  px: { md: 0.5 },
+                  '&::-webkit-scrollbar': {
+                    height: 8,
+                  },
+                  '&::-webkit-scrollbar-track': {
+                    backgroundColor: '#f1f1f1',
+                    borderRadius: 10,
+                  },
+                  '&::-webkit-scrollbar-thumb': {
+                    backgroundColor: '#888',
+                    borderRadius: 10,
+                    '&:hover': {
+                      backgroundColor: '#555',
+                    },
+                  },
+                }}
+              >
+                {products.map((product) => (
                   <Card
+                    key={product.id}
                     sx={{
+                      minWidth: { xs: 260, sm: 280, md: 300 },
+                      maxWidth: { xs: 260, sm: 280, md: 300 },
                       borderRadius: 3,
                       boxShadow: 2,
                       position: 'relative',
-                      height: '100%',
+                      flexShrink: 0,
                       display: 'flex',
                       flexDirection: 'column',
                       transition: 'all 0.3s ease',
+                      bgcolor: 'white',
                       '&:hover': {
                         boxShadow: 6,
                         transform: 'translateY(-4px)',
@@ -154,271 +249,59 @@ const FeaturedSection = ({
                       alt={product.title}
                       sx={{
                         width: '100%',
-                        height: 200,
+                        height: 250,
                         objectFit: 'cover',
-                        transition: 'transform 0.3s',
-                        '&:hover': {
-                          transform: 'scale(1.05)',
-                        },
                       }}
                     />
                     
                     {/* Product Details */}
-                    <CardContent sx={{ flexGrow: 1, pb: 1 }}>
+                    <CardContent sx={{ flexGrow: 1, pb: 1, textAlign: 'center' }}>
                       <Typography 
                         variant="h6" 
                         fontWeight={600} 
                         gutterBottom
                         sx={{ 
                           fontSize: '1rem',
-                          overflow: 'hidden',
-                          textOverflow: 'ellipsis',
-                          whiteSpace: 'nowrap'
+                          mb: 1
                         }}
                       >
                         {product.title}
                       </Typography>
                       <Typography 
-                        variant="body2" 
-                        color="text.secondary" 
-                        sx={{ 
-                          mb: 1.5,
-                          display: '-webkit-box',
-                          WebkitLineClamp: 2,
-                          WebkitBoxOrient: 'vertical',
-                          overflow: 'hidden',
-                          minHeight: 40
-                        }}
-                      >
-                        {product.description}
-                      </Typography>
-                      <Typography 
                         variant="h6" 
                         fontWeight={700} 
-                        color="primary"
+                        sx={{ mb: 1 }}
                       >
                         ₹{(product.price / 100).toLocaleString('en-IN')}
                       </Typography>
                     </CardContent>
                     
                     {/* Product Actions */}
-                    <CardActions sx={{ justifyContent: 'space-between', px: 2, pb: 2 }}>
+                    <CardActions sx={{ justifyContent: 'center', px: 2, pb: 2 }}>
                       <Button
                         variant="contained"
-                        color="primary"
-                        size="small"
+                        fullWidth
                         onClick={() => onAddToCart(product)}
                         sx={{ 
-                          borderRadius: 20, 
-                          px: 2, 
-                          py: 0.5,
+                          borderRadius: 1,
+                          py: 1,
                           textTransform: 'none',
-                          fontSize: '0.8rem'
+                          bgcolor: 'black',
+                          color: 'white',
+                          '&:hover': {
+                            bgcolor: '#333',
+                          }
                         }}
                       >
-                        Add to Cart
-                      </Button>
-                      <Button
-                        variant="outlined"
-                        color="primary"
-                        size="small"
-                        onClick={() => onBuyNow(product)}
-                        sx={{ 
-                          borderRadius: 20, 
-                          px: 2, 
-                          py: 0.5,
-                          textTransform: 'none',
-                          fontSize: '0.8rem'
-                        }}
-                      >
-                        Buy Now
+                        Add to cart
                       </Button>
                     </CardActions>
                   </Card>
-                </Grid>
-              ))}
-            </Grid>
-          </Grid>
-        </Grid>
-
-        {/* Horizontal Slider - All Products */}
-        {products.length > 6 && (
-          <Box sx={{ mt: 6, position: 'relative' }}>
-            {/* Slider Header */}
-            <Box sx={{ 
-              display: 'flex', 
-              justifyContent: 'space-between', 
-              alignItems: 'center',
-              mb: 3
-            }}>
-              <Typography variant="h5" fontWeight={600}>
-                Explore All Signature Candles
-              </Typography>
-              
-              {/* Navigation Arrows */}
-              <Box sx={{ display: { xs: 'none', md: 'flex' }, gap: 1 }}>
-                <IconButton
-                  onClick={() => scroll('left')}
-                  sx={{
-                    bgcolor: 'background.paper',
-                    boxShadow: 2,
-                    '&:hover': { bgcolor: 'primary.main', color: 'white' },
-                  }}
-                >
-                  <ArrowBackIosNewIcon fontSize="small" />
-                </IconButton>
-                <IconButton
-                  onClick={() => scroll('right')}
-                  sx={{
-                    bgcolor: 'background.paper',
-                    boxShadow: 2,
-                    '&:hover': { bgcolor: 'primary.main', color: 'white' },
-                  }}
-                >
-                  <ArrowForwardIosIcon fontSize="small" />
-                </IconButton>
+                ))}
               </Box>
             </Box>
-
-            {/* Scrollable Container */}
-            <Box
-              ref={scrollContainerRef}
-              sx={{
-                display: 'flex',
-                gap: 3,
-                overflowX: 'auto',
-                scrollBehavior: 'smooth',
-                pb: 2,
-                '&::-webkit-scrollbar': {
-                  height: 8,
-                },
-                '&::-webkit-scrollbar-track': {
-                  backgroundColor: '#f1f1f1',
-                  borderRadius: 10,
-                },
-                '&::-webkit-scrollbar-thumb': {
-                  backgroundColor: '#888',
-                  borderRadius: 10,
-                  '&:hover': {
-                    backgroundColor: '#555',
-                  },
-                },
-              }}
-            >
-              {products.map((product) => (
-                <Card
-                  key={product.id}
-                  sx={{
-                    minWidth: 300,
-                    maxWidth: 300,
-                    borderRadius: 3,
-                    boxShadow: 2,
-                    position: 'relative',
-                    flexShrink: 0,
-                    display: 'flex',
-                    flexDirection: 'column',
-                    transition: 'all 0.3s ease',
-                    '&:hover': {
-                      boxShadow: 6,
-                      transform: 'translateY(-4px)',
-                    },
-                  }}
-                >
-                  {/* Product Badge */}
-                  <ProductBadge badges={product.badges} />
-                  
-                  {/* Product Image */}
-                  <Box
-                    component="img"
-                    src={product.imageUrl}
-                    alt={product.title}
-                    sx={{
-                      width: '100%',
-                      height: 200,
-                      objectFit: 'cover',
-                      transition: 'transform 0.3s',
-                      '&:hover': {
-                        transform: 'scale(1.05)',
-                      },
-                    }}
-                  />
-                  
-                  {/* Product Details */}
-                  <CardContent sx={{ flexGrow: 1, pb: 1 }}>
-                    <Typography 
-                      variant="h6" 
-                      fontWeight={600} 
-                      gutterBottom
-                      sx={{ 
-                        fontSize: '1rem',
-                        overflow: 'hidden',
-                        textOverflow: 'ellipsis',
-                        whiteSpace: 'nowrap'
-                      }}
-                    >
-                      {product.title}
-                    </Typography>
-                    <Typography 
-                      variant="body2" 
-                      color="text.secondary" 
-                      sx={{ 
-                        mb: 1.5,
-                        display: '-webkit-box',
-                        WebkitLineClamp: 2,
-                        WebkitBoxOrient: 'vertical',
-                        overflow: 'hidden',
-                        minHeight: 40
-                      }}
-                    >
-                      {product.description}
-                    </Typography>
-                    <Typography 
-                      variant="h6" 
-                      fontWeight={700} 
-                      color="primary"
-                    >
-                      ₹{(product.price / 100).toLocaleString('en-IN')}
-                    </Typography>
-                  </CardContent>
-                  
-                  {/* Product Actions */}
-                  <CardActions sx={{ justifyContent: 'space-between', px: 2, pb: 2 }}>
-                    <Button
-                      variant="contained"
-                      color="primary"
-                      size="small"
-                      onClick={() => onAddToCart(product)}
-                      sx={{ 
-                        borderRadius: 20, 
-                        px: 2, 
-                        py: 0.5,
-                        textTransform: 'none',
-                        fontSize: '0.8rem'
-                      }}
-                    >
-                      Add to Cart
-                    </Button>
-                    <Button
-                      variant="outlined"
-                      color="primary"
-                      size="small"
-                      onClick={() => onBuyNow(product)}
-                      sx={{ 
-                        borderRadius: 20, 
-                        px: 2, 
-                        py: 0.5,
-                        textTransform: 'none',
-                        fontSize: '0.8rem'
-                      }}
-                    >
-                      Buy Now
-                    </Button>
-                  </CardActions>
-                </Card>
-              ))}
-            </Box>
           </Box>
-        )}
+        </Box>
       </Box>
     </Box>
   );
