@@ -516,7 +516,15 @@ function App() {
             maxWidth: '500px',
             px: { xs: 1, md: 2 }
           }}>
-            <Box sx={{ width: '100%', position: 'relative' }}>
+            <Box 
+              sx={{ 
+                width: '100%', 
+                position: 'relative',
+                '& input:focus + svg': {
+                  color: '#fff',
+                }
+              }}
+            >
               <input
                 type="text"
                 placeholder="Search for products..."
@@ -531,17 +539,27 @@ function App() {
                   outline: 'none',
                   transition: 'all 0.3s ease',
                 }}
+                onFocus={(e) => {
+                  e.target.style.border = '1px solid rgba(255,255,255,0.8)';
+                  e.target.style.background = 'rgba(255,255,255,0.12)';
+                  e.target.style.boxShadow = '0 0 0 3px rgba(255,255,255,0.15)';
+                }}
+                onBlur={(e) => {
+                  e.target.style.border = '1px solid rgba(255,255,255,0.3)';
+                  e.target.style.background = 'rgba(255,255,255,0.05)';
+                  e.target.style.boxShadow = 'none';
+                }}
               />
               <SearchIcon 
-              sx={{ 
-                position: 'absolute', 
-                right: 12, 
-                top: '50%', 
-                transform: 'translateY(-50%)', 
-                color: 'rgba(255,255,255,0.5)',
-                transition: 'color 0.3s ease',
-              }} 
-            />
+                sx={{ 
+                  position: 'absolute', 
+                  right: 12, 
+                  top: '50%', 
+                  transform: 'translateY(-50%)', 
+                  color: 'rgba(255,255,255,0.5)',
+                  transition: 'color 0.3s ease',
+                }} 
+              />
             </Box>
           </Box>
           {/* Right: Profile & Cart */}
